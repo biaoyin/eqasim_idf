@@ -29,7 +29,8 @@ public class EqasimConfigurator {
 				new SwissRailRaptorConfigGroup(), //
 				new EqasimConfigGroup(), //
 				new DiscreteModeChoiceConfigGroup(), //
-				new CalibrationConfigGroup() };
+				new CalibrationConfigGroup()
+		};
 	}
 
 	static public List<AbstractModule> getModules() {

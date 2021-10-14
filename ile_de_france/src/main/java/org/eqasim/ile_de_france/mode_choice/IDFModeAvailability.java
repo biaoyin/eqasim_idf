@@ -43,6 +43,8 @@ public class IDFModeAvailability implements ModeAvailability {
 
 		if (bikeAvailability) {
 			modes.add(TransportMode.bike);
+			modes.add("bike_pt");
+			modes.add("pt_bike");//To do
 		}
 
 		// Add special mode "outside" if applicable

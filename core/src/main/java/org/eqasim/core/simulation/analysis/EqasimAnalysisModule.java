@@ -1,5 +1,6 @@
 package org.eqasim.core.simulation.analysis;
 
+import org.eqasim.core.analysis.BikePtEventHandler;
 import org.eqasim.core.analysis.DefaultPersonAnalysisFilter;
 import org.eqasim.core.analysis.PersonAnalysisFilter;
 import org.eqasim.core.analysis.TripListener;
@@ -16,6 +17,7 @@ public class EqasimAnalysisModule extends AbstractModule {
 		addControlerListenerBinding().to(AnalysisOutputListener.class);
 		bind(DefaultPersonAnalysisFilter.class);
 		bind(PersonAnalysisFilter.class).to(DefaultPersonAnalysisFilter.class);
+
 	}
 
 	@Provides

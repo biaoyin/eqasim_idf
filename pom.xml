@@ -100,6 +100,28 @@
 			<version>4.13.1</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>com.github.matsim-vsp</groupId>
+			<artifactId>pt-extensions</artifactId>
+			<version>67dec05d3b</version>
+			<exclusions>
+				<!-- Will pull old drt version -->
+				<exclusion>
+					<groupId>org.matsim.contrib</groupId>
+					<artifactId>drt</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.matsim</groupId>
+					<artifactId>matsim</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.matsim</groupId>
+					<artifactId>matsim-examples</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 	</dependencies>
 
 	<build>
