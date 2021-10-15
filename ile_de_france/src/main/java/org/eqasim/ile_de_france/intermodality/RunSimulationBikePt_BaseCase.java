@@ -19,6 +19,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.*;
+import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
@@ -32,7 +33,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 
-public class RunSimulationBikePt {
+public class RunSimulationBikePt_BaseCase {
 	static public void main(String[] args) throws ConfigurationException, IOException {
 		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/base_case/big-zone-ex2/SaintDenis_config.xml"};
 
@@ -42,14 +43,29 @@ public class RunSimulationBikePt {
 				.build();
 
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
+
 		//modify some parameters in config file
-		config.controler().setLastIteration(2);
+		config.controler().setLastIteration(60);
+		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.strategy().setMaxAgentPlanMemorySize(5);
 		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
 		dmcConfig.setEnforceSinglePlan(false);
-		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.overwriteExistingFiles);
+		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
+			if (ss.getStrategyName().equals("KeepLastSelected")) {
+				ss.setStrategyName("ChangeExpBeta");
+				ss.setWeight(0.90);
+			}
+		}
+		StrategyConfigGroup.StrategySettings strategySettings_mode = new StrategyConfigGroup.StrategySettings();
+		strategySettings_mode.setStrategyName("ChangeSingleTripMode");
+		strategySettings_mode.setWeight(0.05);
+		StrategyConfigGroup strategyConfig = config.strategy();
+		strategyConfig.addStrategySettings(strategySettings_mode);
+		strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
+		PlansCalcRouteConfigGroup routingConfig = config.plansCalcRoute();
+		routingConfig.setNetworkModes(Arrays.asList("car", "car_passenger", "truck"));
 
 
 		//set Park and ride lot locations
@@ -95,17 +111,18 @@ public class RunSimulationBikePt {
 		cachedModes.add("pt_bike");
 		dmcConfig.setCachedModes(cachedModes);
 
+
 		// Activation of constraint intermodal modes Using
-		Collection<String> tourConstraints = new HashSet<>(dmcConfig.getTourConstraints());
+	/*	Collection<String> tourConstraints = new HashSet<>(dmcConfig.getTourConstraints());
 		tourConstraints.add("IntermodalModesConstraint");
 		dmcConfig.setTourConstraints(tourConstraints);
+*/
 
-
-		for (StrategyConfigGroup.StrategySettings strategy : config.strategy().getStrategySettings()) {
+		/*for (StrategyConfigGroup.StrategySettings strategy : config.strategy().getStrategySettings()) {
 			if(strategy.getStrategyName().equals("DiscreteModeChoice")) {
 				strategy.setWeight(10000);// all weights from this innovative strategy
 			}
-		}
+		}*/
 
 //
 		cmd.applyConfiguration(config);

@@ -1,4 +1,4 @@
-package org.eqasim.ile_de_france.intermodality;
+package org.eqasim.ile_de_france;
 
 
 import ch.sbb.matsim.routing.pt.raptor.RaptorIntermodalAccessEgress;
@@ -45,7 +45,7 @@ import java.util.Arrays;
 public class RunSimulation_BaseCase {
 
 	static public void main(String[] args) throws ConfigurationException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-1pm/base_case/SaintDenis_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/base_case/big-zone-ex2/SaintDenis_config.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -54,15 +54,10 @@ public class RunSimulation_BaseCase {
 
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 		//modify some parameters in config file
-		config.controler().setLastIteration(1);
+		config.controler().setLastIteration(60);
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 
-
-
-
-
-
-		//////////////////////////////driving restriction scenario setting////////////////////////////
+		//////////////////////////////basic strategy setting////////////////////////////
 		config.strategy().setMaxAgentPlanMemorySize(5);
 		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
@@ -77,23 +72,16 @@ public class RunSimulation_BaseCase {
 		StrategyConfigGroup.StrategySettings strategySettings_mode = new StrategyConfigGroup.StrategySettings();
 		strategySettings_mode.setStrategyName("ChangeSingleTripMode");
 		strategySettings_mode.setWeight(0.05);
-//		StrategyConfigGroup.StrategySettings strategySettings_route = new StrategyConfigGroup.StrategySettings();
-//		strategySettings_route.setStrategyName("ReRoute");
-//		strategySettings_route.setWeight(0.05);
 		StrategyConfigGroup strategyConfig = config.strategy();
 		strategyConfig.addStrategySettings(strategySettings_mode);
-//		strategyConfig.addStrategySettings(strategySettings_route);
 		strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
 		PlansCalcRouteConfigGroup routingConfig = config.plansCalcRoute();
 		routingConfig.setNetworkModes(Arrays.asList("car", "car_passenger", "truck"));
 		/////////////////////////////////////////////////////////////////
 
-
 		config.qsim().setVehiclesSource(VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.overwriteExistingFiles);
-
 		cmd.applyConfiguration(config);
-
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
 		IDFConfigurator.configureScenario(scenario);
@@ -108,7 +96,6 @@ public class RunSimulation_BaseCase {
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new IDFModeChoiceModule(cmd));
-
 
 		controller.run();
 	}

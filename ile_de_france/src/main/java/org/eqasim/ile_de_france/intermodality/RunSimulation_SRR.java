@@ -1,15 +1,17 @@
 package org.eqasim.ile_de_france.intermodality;
 
 
+import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
+import ch.sbb.matsim.mobsim.qsim.SBBTransitModule;
+import ch.sbb.matsim.mobsim.qsim.pt.SBBTransitEngineQSimModule;
+import ch.sbb.matsim.routing.pt.raptor.IntermodalAwareRouterModeIdentifier;
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorModule;
-import com.google.inject.Guice;
-import com.google.inject.util.Modules;
-import org.eqasim.core.components.EqasimComponentsModule;
 import org.eqasim.core.simulation.analysis.EqasimAnalysisModule;
 import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModule;
 import org.eqasim.ile_de_france.IDFConfigurator;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModule;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.TransportMode;
 import org.matsim.contribs.discrete_mode_choice.modules.config.DiscreteModeChoiceConfigGroup;
 import org.matsim.core.config.CommandLine;
 import org.matsim.core.config.CommandLine.ConfigurationException;
@@ -18,6 +20,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.config.groups.QSimConfigGroup.VehiclesSource;
 import org.matsim.core.config.groups.StrategyConfigGroup;
+import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.scenario.ScenarioUtils;
@@ -26,12 +29,12 @@ import java.util.Arrays;
 
 
 // to run saint-denis_1pm case, we can use the network of cut scenario of 10pct, which has more links
-public class RunSimulation_BaseCase_SRR {
+public class RunSimulation_SRR {
 //	private static final String scenarioID = "saint_denis_1pm";
 //	private static final String networkID = "sd_shp_ex3"; // ex1: extended LP; ex2: box covers the SD;  ex3: box covers the extended LP;
 
 	static public void main(String[] args) throws ConfigurationException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-1pm/SaintDenis_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/base_case/big-zone-ex2/SaintDenis_config.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -41,7 +44,7 @@ public class RunSimulation_BaseCase_SRR {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(1);
+		config.controler().setLastIteration(3);
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 
 		////////////////////////////////////////////////////////////////////////////////
@@ -61,37 +64,33 @@ public class RunSimulation_BaseCase_SRR {
 		StrategyConfigGroup.StrategySettings strategySettings_mode = new StrategyConfigGroup.StrategySettings();
 		strategySettings_mode.setStrategyName("ChangeSingleTripMode");
 		strategySettings_mode.setWeight(0.05);
-//		StrategyConfigGroup.StrategySettings strategySettings_route = new StrategyConfigGroup.StrategySettings();
-//		strategySettings_route.setStrategyName("ReRoute");
-//		strategySettings_route.setWeight(0.05);
-
 		StrategyConfigGroup strategyConfig = config.strategy();
 		strategyConfig.addStrategySettings(strategySettings_mode);
-//		strategyConfig.addStrategySettings(strategySettings_route);
-
 		strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
-
 		PlansCalcRouteConfigGroup routingConfig = config.plansCalcRoute();
 		routingConfig.setNetworkModes(Arrays.asList("car", "car_passenger", "truck"));
 
 		//// intermodality configuration
-//		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
-//		SwissRailRaptorConfigGroup srrConfig =  (SwissRailRaptorConfigGroup) config.getModules().get(SwissRailRaptorConfigGroup.GROUP);
-//		srrConfig.setUseIntermodalAccessEgress(true);
-//		srrConfig.setIntermodalAccessEgressModeSelection(IntermodalAccessEgressModeSelection.CalcLeastCostModePerStop);
-//		IntermodalAccessEgressParameterSet paramSetWalk = new IntermodalAccessEgressParameterSet();
-//		paramSetWalk.setMode(TransportMode.walk);
-//		paramSetWalk.setInitialSearchRadius(50);
-//		paramSetWalk.setMaxRadius(1000);
-//		paramSetWalk.setSearchExtensionRadius(100);
-//		srrConfig.addIntermodalAccessEgress(paramSetWalk);
-
+		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
+		SwissRailRaptorConfigGroup srrConfig =  (SwissRailRaptorConfigGroup) config.getModules().get(SwissRailRaptorConfigGroup.GROUP);
+		srrConfig.setUseIntermodalAccessEgress(true);
+		srrConfig.setIntermodalAccessEgressModeSelection(SwissRailRaptorConfigGroup.IntermodalAccessEgressModeSelection.CalcLeastCostModePerStop);
+		SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet paramSetWalk = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
+		paramSetWalk.setMode(TransportMode.walk);
+		paramSetWalk.setInitialSearchRadius(50);
+		paramSetWalk.setMaxRadius(1000);
+		paramSetWalk.setSearchExtensionRadius(100);
+		srrConfig.addIntermodalAccessEgress(paramSetWalk);
+		/*SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet paramSetBike = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
+		paramSetBike.setMode(TransportMode.bike);
+		paramSetBike.setInitialSearchRadius(100);
+		paramSetBike.setMaxRadius(2000);
+		paramSetBike.setSearchExtensionRadius(200);
+		srrConfig.addIntermodalAccessEgress(paramSetBike);*/
 		/////////////////////////////////////////////////////////////////
 		config.qsim().setVehiclesSource(VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.overwriteExistingFiles);
-
 		cmd.applyConfiguration(config);
-
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
 		IDFConfigurator.configureScenario(scenario);
@@ -103,37 +102,28 @@ public class RunSimulation_BaseCase_SRR {
 		Controler controller = new Controler(scenario);
 		IDFConfigurator.configureController(controller);
 		//
-		// add SBB router
-		// To use the deterministic pt simulation (Part 1 of 2):
-//		controller.addOverridingModule(new SBBTransitModule());
-
-//		controller.addOverridingModule(new SwissRailRaptorModule());
-
-//		controller.addOverridingModule(new AbstractModule() {
-//			@Override
-//			public void install() {
-////				install(Modules.override(new SwissRailRaptorModule()).with(new EqasimComponentsModule()));
-////				install(new SwissRailRaptorModule());
-//
-////				bind(MainModeIdentifier.class).to(IDFEqasimMainModeIdentifier.class);
-//				bind(AnalysisMainModeIdentifier.class).to(IDFEqasimMainModeIdentifier.class);
-////				bind(IDFEqasimMainModeIdentifier.class);
-//			}
-//		});
-//		https://stackoverflow.com/questions/483087/overriding-binding-in-guice
-		Guice.createInjector(Modules.override(new SwissRailRaptorModule()).with(new EqasimComponentsModule()));
-
-
-//		// To use the deterministic pt simulation (Part 2 of 2):
-//		controller.configureQSimComponents(components -> {
-//			SBBTransitEngineQSimModule.configure(components);
-//			// if you have other extensions that provide QSim components, call their configure-method here
-//		});
 
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new IDFModeChoiceModule(cmd));
 
+		// add SBB router
+		// To use the deterministic pt simulation (Part 1 of 2):
+		controller.addOverridingModule(new SBBTransitModule());
+		controller.addOverridingModule(new SwissRailRaptorModule());
+
+		controller.addOverridingModule(new AbstractModule() {
+			@Override
+			public void install() {
+				bind(IntermodalAwareRouterModeIdentifier.class).to(IDFIntermodalAwareRouterModeIdentifier.class);
+			}
+		});
+
+		// To use the deterministic pt simulation (Part 2 of 2):
+		controller.configureQSimComponents(components -> {
+			SBBTransitEngineQSimModule.configure(components);
+			// if you have other extensions that provide QSim components, call their configure-method here
+		});
 
 		controller.run();
 	}
