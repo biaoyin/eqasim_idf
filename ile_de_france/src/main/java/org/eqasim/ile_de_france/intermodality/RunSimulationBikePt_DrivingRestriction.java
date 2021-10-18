@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import org.eqasim.core.components.bike_pt.routing.EqasimBikePtModule;
 import org.eqasim.core.components.bike_pt.routing.EqasimPtBikeModule;
-import org.eqasim.core.components.bike_pt.routing.ParkRideManager;
+import org.eqasim.core.components.ParkRideManager;
 import org.eqasim.core.components.config.EqasimConfigGroup;
 import org.eqasim.core.simulation.analysis.EqasimAnalysisModule;
 import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModuleBikePt;
@@ -134,7 +134,6 @@ public class RunSimulationBikePt_DrivingRestriction {
 		tourConstraints.add("IntermodalModesConstraint");
 		dmcConfig.setTourConstraints(tourConstraints);
 */
-
 		/*for (StrategyConfigGroup.StrategySettings strategy : config.strategy().getStrategySettings()) {
 			if(strategy.getStrategyName().equals("DiscreteModeChoice")) {
 				strategy.setWeight(10000);// all weights from this innovative strategy

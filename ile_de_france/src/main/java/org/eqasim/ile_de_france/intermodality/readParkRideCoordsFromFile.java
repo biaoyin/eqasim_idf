@@ -31,7 +31,7 @@ class readParkRideCoordsFromFile {
                 yCoordList.add(Double.parseDouble(line.split(";")[1]));
             }
         } catch (FileNotFoundException e) {
-            //Some error logging
+            System.out.println("check out the input file of parking locations");
         }
 
         for (int i = 0; i < xCoordList.size(); i++) {

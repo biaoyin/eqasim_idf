@@ -86,101 +86,50 @@ public class IntermodalModesConstraint implements TourConstraint{
     public boolean validateBeforeEstimation(List<DiscreteModeChoiceTrip> tour, List<String> modes,
                                             List<List<String>> previousModes) {
 
-        boolean found_bike_pt = false;
-        boolean found_pt_bike = false;
-
-        // checking car_pt and pt_car in the list of possible modes to be used
-        /*
-         * for (String mode : modes) { if (mode.equals("pt_car")) { found_pt_car = true;
-         * }
-         *
-         * if (mode.equals("car_pt")) { if (!found_pt_car) { return false; }
-         *
-         * found_pt_car = false; } }
-         */
-
+        boolean found_x_pt = false;
+        boolean found_pt_x = false;
 
         for (String mode : modes) {
-            if (mode.equals("bike_pt")) {
-                found_bike_pt = true;
+            if (mode.equals("bike_pt") || mode.equals("car_pt")) {
+                found_x_pt = true;
             }
 
-            if (mode.equals("pt_bike")) {
-                if (!found_bike_pt) {
+            if (mode.equals("pt_bike") || mode.equals("pt_car")) {
+                if (!found_x_pt) {
                     return false;
                 }
 
-                found_bike_pt = false;
+                found_x_pt = false;
             }
         }
 
-        if (found_bike_pt) {
+        if (found_x_pt) {
             return false;
         }
 
-        Id<? extends BasicLocation> latestBikePtOriginId = null;
+        Id<? extends BasicLocation> latestAccessModePtOriginId = null;
         Facility prkFacilityOrig = null;
         Facility prkFacilityDest = null;
         Activity intermodalInteractionGoing = null;
         Activity intermodalInteractionComing = null;
         for (int i = 0; i < tour.size(); i++) {
 
-            if (modes.get(i).equals("bike_pt")) {
-                latestBikePtOriginId = LocationUtils.getLocationId(tour.get(i).getOriginActivity());
+            if (modes.get(i).equals("bike_pt") || modes.get(i).equals("car_pt")) {
+                latestAccessModePtOriginId = LocationUtils.getLocationId(tour.get(i).getOriginActivity());
 
                 if(!tour.get(i).getOriginActivity().getType().equals("home")) {
                     return false;
                 }
 
-
-
-                //ParkingFinder prFinderOri = new ParkingFinder(parkRideCoords);
-
-                //prkFacilityOrig = prFinderOri.getParking(tour.get(i).getOriginActivity().getCoord(), network);
-
-                //Link prLink = NetworkUtils.getNearestLink(network, prkFacilityOri.getCoord());
-                //intermodalInteractionGoing = PopulationUtils.createActivityFromCoordAndLinkId(
-                //		"intermodal interaction going", prkFacilityOri.getCoord(), prLink.getId());
-
-                // To do parking location constraint
-                // if
-                // (!latestBikePtOriginId.equals(LocationUtils.getLocationId(intermodalInteraction)))
-                // {
-                // return false;
-                // }
-
             }
 
-            if (modes.get(i).equals("pt_bike")) {
+            if (modes.get(i).equals("pt_bike") || modes.get(i).equals("pt_car") ) {
                 Id<? extends BasicLocation> currentLocationId = LocationUtils
                         .getLocationId(tour.get(i).getDestinationActivity());
-
-                // Checking for Origin of car_pt and destination of pt_car
-                //if (!latestBikePtOriginId.equals(currentLocationId)) {
-                //	return false;
-                //}
 
                 if(!tour.get(i).getDestinationActivity().getType().equals("home")){
                     return false;
                 }
-
-
-                // Checking for parking plot location according to the location of the origin
-                // activity of car_pt and the destination activitty of pt_car
-                //ParkingFinder prFinderDest = new ParkingFinder(parkRideCoords);
-
-                //prkFacilityDest = prFinderDest.getParking(tour.get(i).getDestinationActivity().getCoord(),
-                //		network);
-
-                //Link prLink = NetworkUtils.getNearestLink(network, prkFacilityDest.getCoord());
-
-                //intermodalInteractionComing = PopulationUtils.createActivityFromCoordAndLinkId(
-                //		"intermodal interaction coming", prkFacilityDest.getCoord(), prLink.getId());
-
-                // To do parking location constraint
-                //if (!prkFacilityOrig.getCoord().equals(prkFacilityDest.getCoord())){
-                //	return false;
-                //}
 
             }
         }

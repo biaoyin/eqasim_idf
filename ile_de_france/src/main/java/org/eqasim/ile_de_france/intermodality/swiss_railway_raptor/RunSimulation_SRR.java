@@ -1,4 +1,4 @@
-package org.eqasim.ile_de_france.intermodality;
+package org.eqasim.ile_de_france.intermodality.swiss_railway_raptor;
 
 
 import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
@@ -27,14 +27,14 @@ import org.matsim.core.scenario.ScenarioUtils;
 
 import java.util.Arrays;
 
-
+// this only works for "SubtourModeChoice" rather than "DiscreteModeChoice".
 // to run saint-denis_1pm case, we can use the network of cut scenario of 10pct, which has more links
 public class RunSimulation_SRR {
 //	private static final String scenarioID = "saint_denis_1pm";
 //	private static final String networkID = "sd_shp_ex3"; // ex1: extended LP; ex2: box covers the SD;  ex3: box covers the extended LP;
 
 	static public void main(String[] args) throws ConfigurationException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/base_case/big-zone-ex2/SaintDenis_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/base_case/small-zone-ex3/SaintDenis_config.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -54,6 +54,13 @@ public class RunSimulation_SRR {
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
 		dmcConfig.setEnforceSinglePlan(false);
+
+		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
+			if (ss.getStrategyName().equals("DiscreteModeChoice")) {
+				ss.setStrategyName("SubtourModeChoice");
+				ss.setWeight(0.05);
+			}
+		}
 
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
@@ -78,15 +85,21 @@ public class RunSimulation_SRR {
 		SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet paramSetWalk = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
 		paramSetWalk.setMode(TransportMode.walk);
 		paramSetWalk.setInitialSearchRadius(50);
-		paramSetWalk.setMaxRadius(1000);
+		paramSetWalk.setMaxRadius(3000);
 		paramSetWalk.setSearchExtensionRadius(100);
 		srrConfig.addIntermodalAccessEgress(paramSetWalk);
-		/*SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet paramSetBike = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
+		SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet paramSetBike = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
 		paramSetBike.setMode(TransportMode.bike);
 		paramSetBike.setInitialSearchRadius(100);
-		paramSetBike.setMaxRadius(2000);
+		paramSetBike.setMaxRadius(4000);
 		paramSetBike.setSearchExtensionRadius(200);
-		srrConfig.addIntermodalAccessEgress(paramSetBike);*/
+		srrConfig.addIntermodalAccessEgress(paramSetBike);
+		SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet paramSetCar = new SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet();
+		paramSetCar.setMode(TransportMode.car);
+		paramSetCar.setInitialSearchRadius(1000);
+		paramSetCar.setMaxRadius(15000);
+		paramSetCar.setSearchExtensionRadius(500);
+		srrConfig.addIntermodalAccessEgress(paramSetCar);
 		/////////////////////////////////////////////////////////////////
 		config.qsim().setVehiclesSource(VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.overwriteExistingFiles);

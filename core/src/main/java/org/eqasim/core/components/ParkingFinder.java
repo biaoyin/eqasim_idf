@@ -1,4 +1,4 @@
-package org.eqasim.core.components.bike_pt.routing;
+package org.eqasim.core.components;
 
 import org.eqasim.core.simulation.mode_choice.EqasimHomeFinder;
 import org.matsim.api.core.v01.BasicLocation;

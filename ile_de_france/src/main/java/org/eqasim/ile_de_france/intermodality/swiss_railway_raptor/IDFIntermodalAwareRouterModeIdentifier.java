@@ -1,4 +1,4 @@
-package org.eqasim.ile_de_france.intermodality;
+package org.eqasim.ile_de_france.intermodality.swiss_railway_raptor;
 
 import ch.sbb.matsim.routing.pt.raptor.IntermodalAwareRouterModeIdentifier;
 import org.matsim.api.core.v01.TransportMode;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @author mrieser / SBB
+ * @author Biao Yin
  */
 public class IDFIntermodalAwareRouterModeIdentifier extends IntermodalAwareRouterModeIdentifier {
 

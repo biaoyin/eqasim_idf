@@ -1,5 +1,6 @@
 package org.eqasim.core.components.bike_pt.routing;
 
+import org.eqasim.core.components.ParkingFinder;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;

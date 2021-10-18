@@ -1,4 +1,4 @@
-package org.eqasim.core.components.bike_pt.routing;
+package org.eqasim.core.components.car_pt.routing;
 
 import org.eqasim.core.components.ParkingFinder;
 import org.matsim.api.core.v01.Coord;
@@ -20,8 +20,8 @@ import java.util.List;
 //import org.matsim.core.router.StageActivityTypes;
 //import org.matsim.core.router.StageActivityTypesImpl;
 
-public class BikePtRoutingModule implements RoutingModule{
-    private final RoutingModule bikeRoutingModule; // we may not use bikeRoutingModule, but we first consider this.
+public class PtCarRoutingModule implements RoutingModule{
+    private final RoutingModule carRoutingModule;
     private final Network network;
 
     // Create an object of a ptRoutingModule
@@ -29,9 +29,8 @@ public class BikePtRoutingModule implements RoutingModule{
 
     private final List<Coord> parkRideCoords;
 
-//    @Inject
-    public BikePtRoutingModule(RoutingModule bikeRoutingModule, RoutingModule ptRoutingModule, Network network, List<Coord> parkRideCoords) {
-        this.bikeRoutingModule = bikeRoutingModule;
+    public PtCarRoutingModule(RoutingModule ptRoutingModule, RoutingModule roadRoutingModule, Network network, List<Coord> parkRideCoords) {
+        this.carRoutingModule = roadRoutingModule;
         this.ptRoutingModule = ptRoutingModule;
         this.network = network;
         this.parkRideCoords = parkRideCoords;
@@ -39,7 +38,7 @@ public class BikePtRoutingModule implements RoutingModule{
     }
 
     @Override
-	/*
+/*
 	 public List<? extends PlanElement> calcRoute(Facility fromFacility, Facility
 	 toFacility, double departureTime, Person person) {
 	//Id<AVOperator> operatorId = choiceStrategy.chooseRandomOperator();
@@ -54,66 +53,53 @@ public class BikePtRoutingModule implements RoutingModule{
 
     public List<? extends PlanElement> calcRoute(Facility fromFacility, Facility toFacility, double departureTime,
                                                  Person person) {
+        // Park and ride lot location
 
         ParkingFinder prFinder = new ParkingFinder(parkRideCoords);
+        //Facility prFacility = prFinder.getParking(person, fromFacility, toFacility, network);
+
 
         Facility prkFacility = prFinder.getParking(person, fromFacility, toFacility, network);
 
-        // Creation of a bike trip to the PR facility
-        List<? extends PlanElement> bikeElements = bikeRoutingModule.calcRoute(fromFacility, prkFacility, departureTime,
-                null);
-
-        // double vehicleDistance = Double.NaN;
-        double bikeTravelTime = Double.NaN;
-        // double price = Double.NaN;
-
-        Leg leg = (Leg) bikeElements.get(0);
-        // vehicleDistance = leg.getRoute().getDistance();
-        bikeTravelTime = leg.getRoute().getTravelTime().seconds(); // can not invoke seconds() in this context
-
-        // Given the request time, we can calculate the waiting time
-        double timeToAccessPt = 300; // We take 5 min to park the car and access to PT
-
-        double ptDepartureTime = departureTime + bikeTravelTime + timeToAccessPt;
-
-        // Creation of a PT trip from the PR facility to the destination
-        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(prkFacility, toFacility, ptDepartureTime,
+        // Creation of a PT trip from the destination point to PR facility
+        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(fromFacility, prkFacility, departureTime,
                 person);
 
-        // Creation interaction between bike and pt
+        // double vehicleDistance = Double.NaN;
+        double vehicleTravelTime = Double.NaN;
+        // double price = Double.NaN;
+
+        Leg leg = (Leg) ptElements.get(0);
+        // vehicleDistance = leg.getRoute().getDistance();
+        vehicleTravelTime = leg.getRoute().getTravelTime().seconds();
+
+        // Given the request time, we can calculate the waiting time
+        double timeToAccessCar = 300; // We take 5 min to park the car and access to PT
+
+        double carDepartureTime = departureTime + vehicleTravelTime + timeToAccessCar;
+
+        // Creation of a the car trip from the PR facility to the origin point (home)
+        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(prkFacility, toFacility, carDepartureTime,
+                null);
+
+        // Creation interaction between pt and car
         Link prLink = NetworkUtils.getNearestLink(network, prkFacility.getCoord());
-        Activity interactionActivtyBikePt = PopulationUtils.createActivityFromCoordAndLinkId("bikePt interaction",
+        Activity interactionActivtyPtCar = PopulationUtils.createActivityFromCoordAndLinkId("ptCar interaction",
                 prkFacility.getCoord(), prLink.getId());
-        interactionActivtyBikePt.setMaximumDuration(300);// 5 min
+        interactionActivtyPtCar.setMaximumDuration(300);// 5 min
 
         // Creation full trip
         List<PlanElement> allElements = new LinkedList<>();
-        allElements.addAll(bikeElements);
-        allElements.add(interactionActivtyBikePt);
         allElements.addAll(ptElements);
+        allElements.add(interactionActivtyPtCar);
+        allElements.addAll(carElements);
 
         return allElements;
-
     }
 /*
     @Override
     public StageActivityTypes getStageActivityTypes() {
-
-        return new StageActivityTypesImpl("car interaction", "carPt interaction", "pt interaction");
+        return new StageActivityTypesImpl("pt interaction", "ptCar interaction", "car interaction");
     }
-
-    public static Activity createStageActivityFromCoordLinkIdAndModePrefix(final Coord interactionCoord, final Id<Link> interactionLink, String modePrefix ) {
-		Activity act = createActivityFromCoordAndLinkId(PlanCalcScoreConfigGroup.createStageActivityType(modePrefix), interactionCoord, interactionLink);
-		act.setMaximumDuration(0.0);
-		return act;
-	}
-
-	 private Activity getStageActivityTypes() {
-        Activity activity = PopulationUtils.createStageActivityFromCoordLinkIdAndModePrefix(prkFacility.getCoord(),
-                stopFacility.getLinkId(), mode);
-        return activity;
-    }
-
-*/
-
+ */
 }

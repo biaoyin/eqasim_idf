@@ -2,8 +2,8 @@ package org.eqasim.core.simulation.mode_choice.utilities.predictors;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.eqasim.core.components.bike_pt.routing.ParkRideManager;
-import org.eqasim.core.components.bike_pt.routing.ParkingFinder;
+import org.eqasim.core.components.ParkRideManager;
+import org.eqasim.core.components.ParkingFinder;
 import org.eqasim.core.simulation.mode_choice.cost.CostModel;
 import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
 import org.eqasim.core.simulation.mode_choice.utilities.variables.BikePtVariables;

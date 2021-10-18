@@ -6,7 +6,7 @@ import org.eqasim.core.components.ParkRideManager;
 import org.eqasim.core.components.ParkingFinder;
 import org.eqasim.core.simulation.mode_choice.cost.CostModel;
 import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
-import org.eqasim.core.simulation.mode_choice.utilities.variables.PtBikeVariables;
+import org.eqasim.core.simulation.mode_choice.utilities.variables.CarPtVariables;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -20,73 +20,84 @@ import org.matsim.pt.routes.TransitPassengerRoute;
 
 import java.util.List;
 
-public class PtBikePredictor extends CachedVariablePredictor<PtBikeVariables>{
-    private final RoutingModule bikeRoutingModule;
+public class CarPtPredictor extends CachedVariablePredictor<CarPtVariables>{
+    private final RoutingModule carRoutingModule;
     private final RoutingModule ptRoutingModule;
-//    private final CostModel bikeCostModel;
+    private final CostModel carCostModel;
     private final CostModel ptCostModel;
     private final ModeParameters parameters;
-    //private final List<Coord> parkRideCoords;
+    // private final List<Coord> parkRideCoords;
     private final Network network;
     private final PopulationFactory populationFactory;
     private final ParkRideManager parkRideMana;
 
     @Inject
-    public PtBikePredictor(ModeParameters parameters, Network network, @Named("bike") RoutingModule bikeRoutingModule,
-                           @Named("pt") RoutingModule ptRoutingModule, PopulationFactory populationFactory,
-                           @Named("pt") CostModel ptCostModel, ParkRideManager parkRideMana) {
-//        this.bikeCostModel = bikeCostModel;
+    public CarPtPredictor(ModeParameters parameters, Network network, @Named("car") RoutingModule carRoutingModule,
+                          @Named("pt") RoutingModule ptRoutingModule, PopulationFactory populationFactory, @Named("car") CostModel carCostModel,
+                          @Named("pt") CostModel ptCostModel, ParkRideManager parkRideMana) {
+        this.carCostModel = carCostModel;
         this.ptCostModel = ptCostModel;
         this.parameters = parameters;
-        //this.parkRideCoords = parkRideCoords;
+        // this.parkRideCoords = parkRideCoords;
         this.network = network;
-        this.bikeRoutingModule = bikeRoutingModule;
+        this.carRoutingModule = carRoutingModule;
         this.ptRoutingModule = ptRoutingModule;
         this.populationFactory = populationFactory;
         this.parkRideMana = parkRideMana;
     }
 
     @Override
-    public PtBikeVariables predict(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
-        // double travelTime_min = ((Leg) elements.get(0)).getTravelTime() / 60.0;
+    public CarPtVariables predict(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
 
-        // Parking finder
-        /*
-        List<Coord> parkRideCoords = new ArrayList<Coord>();
-
-        double[] xCoord = { 695217.09, 691365.43, 703543.53, 702770.20, 693929.84, 704530.69, 708963.08, 711811.05,
-                685914.90, 712180.02, 702337.39, 709906.41 };
-
-        double[] yCoord = { 7059186.19, 7065019.42, 7057923.10, 7056776.29, 7050511.72, 7057833.24, 7061460.64,
-                7068903.84, 7047847.26, 7071112.37, 7049972.24, 7056430.63 };
-
-        for (int i = 0; i < yCoord.length; i++) {
-            Coord prCoord = new Coord(xCoord[i], yCoord[i]);
-            parkRideCoords.add(prCoord);
-        }
-
-         */
 
         ParkingFinder prFinder = new ParkingFinder(parkRideMana.getCoordinates());
         //ParkingFinder prFinder = new ParkingFinder(parkRideCoords);
         Facility prkFacility = prFinder.getParking2(person, trip.getOriginActivity(), trip.getDestinationActivity(),
                 network);
 
-        // Creation of a pt leg from the PR facility to Destination
+        // Creation of a car leg from Origin to the PR facility
         Link fromLink = NetworkUtils.getNearestLink(network, trip.getOriginActivity().getCoord());
         Facility fromFacility = new LinkWrapperFacility(fromLink);
+        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(fromFacility, prkFacility,
+                trip.getDepartureTime(), null);
+        if (carElements.size() > 1) {
+            throw new IllegalStateException("We do not support multi-stage car trips yet.");
+        }
 
-        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(fromFacility, prkFacility,
-                trip.getDepartureTime(), person);
+        double vehicleTravelTime = Double.NaN;
+        Leg leg_car = (Leg) carElements.get(0);
+        vehicleTravelTime = leg_car.getRoute().getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
 
-        // "car_pt interaction" definition
-        Activity bike_pt = (Activity) populationFactory.createActivityFromCoord("bike_pt interaction",
+        // We take 5 min to park the car and access to PT (transfer time)
+        double timeToAccessPt = 5;
+        vehicleTravelTime += timeToAccessPt;
+
+
+        Activity car_pt = (Activity) populationFactory.createActivityFromCoord("car_pt interaction",
                 prkFacility.getCoord());
-        bike_pt.setMaximumDuration(600);// 10 min
-        bike_pt.setLinkId(prkFacility.getLinkId());
+        car_pt.setMaximumDuration(600);// 10 min
+        car_pt.setLinkId(prkFacility.getLinkId());
 
-        DiscreteModeChoiceTrip trip_pt = new DiscreteModeChoiceTrip(trip.getOriginActivity(), bike_pt, "pt",
-                ptElements, person.hashCode(),ptElements.get(0).hashCode(), 1000);
+        DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(trip.getOriginActivity(), car_pt, "car",
+                carElements, person.hashCode(), leg_car.hashCode(),1000);
+        double cost_MU_car = carCostModel.calculateCost_MU(person, trip_car, carElements);
+
+        double euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
+        double accessEgressTime_min_car = parameters.car.constantAccessEgressWalkTime_min;
+
+        // Creation of a pt leg from the PR facility to Destination
+        double ptDepartureTime = trip.getDepartureTime() + vehicleTravelTime * 60;
+        Link toLink = NetworkUtils.getNearestLink(network, trip.getDestinationActivity().getCoord());
+        Facility toFacility = new LinkWrapperFacility(toLink);
+
+        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(prkFacility, toFacility, ptDepartureTime,
+                person);
+
+        DiscreteModeChoiceTrip trip_pt = new DiscreteModeChoiceTrip(car_pt, trip.getDestinationActivity(), "pt",
+                ptElements, person.hashCode(), ptElements.get(0).hashCode(), 1000);
+
+        //DiscreteModeChoiceTrip(Activity originActivity, Activity destinationActivity, String initialMode,
+        //        List<? extends PlanElement> initialElements, int personHash, int tripHash, int index)
 
         int numberOfVehicularTrips = 0;
         boolean isFirstWaitingTime = true;
@@ -116,7 +127,13 @@ public class PtBikePredictor extends CachedVariablePredictor<PtBikeVariables>{
                         double inVehicleTime = leg.getTravelTime().seconds() - waitingTime;
 
                         inVehicleTime_min += inVehicleTime / 60.0;
-
+                        /*
+                        if (!isFirstWaitingTime) {
+                            waitingTime_min += route.getWaitingTime() / 60.0;
+                        } else {
+                            isFirstWaitingTime = false;
+                        }
+                        */
                         if (!isFirstWaitingTime) {
                             waitingTime_min += waitingTime / 60.0;
                         } else {
@@ -134,37 +151,11 @@ public class PtBikePredictor extends CachedVariablePredictor<PtBikeVariables>{
         int numberOfLineSwitches = Math.max(0, numberOfVehicularTrips - 1);
 
         // Calculate cost
-        double cost_MU_pt = ptCostModel.calculateCost_MU(person, trip_pt, ptElements);  //or ptCostModel??
+        double cost_MU_pt = ptCostModel.calculateCost_MU(person, trip_pt, ptElements);
 
         double euclideanDistance_km_pt = PredictorUtils.calculateEuclideanDistance_km(trip_pt);
 
-        // Creation of a bike leg from PR facility to the Destination
-
-        // We take 5 min to park the car and access to PT (transfer time)
-        double timeToAccessPt = 5;
-        double bikeDepartureTime = trip.getDepartureTime()
-                + (inVehicleTime_min + waitingTime_min + accessEgressTime_min_pt + timeToAccessPt) * 60;
-        Link toLink = NetworkUtils.getNearestLink(network, trip.getDestinationActivity().getCoord());
-        Facility toFacility = new LinkWrapperFacility(toLink);
-
-        List<? extends PlanElement> bikeElements = bikeRoutingModule.calcRoute(prkFacility, toFacility, bikeDepartureTime,
-                null);
-        if (bikeElements.size() > 1) {
-            throw new IllegalStateException("We do not support multi-stage bike trips yet.");
-        }
-
-        double bikeTravelTime = Double.NaN;
-        Leg leg_car = (Leg) bikeElements.get(0);
-        bikeTravelTime = leg_car.getRoute().getTravelTime().seconds() / 60.0;
-
-        DiscreteModeChoiceTrip trip_bike = new DiscreteModeChoiceTrip(bike_pt, trip.getOriginActivity(), "bike",
-                bikeElements, person.hashCode(), leg_car.hashCode(),1000);
-
-//        double cost_MU_car = ptCostModel.calculateCost_MU(person, trip_car, carElements);
-//        double euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
-//        double accessEgressTime_min_car = parameters.car.constantAccessEgressWalkTime_min;
-
-        return new PtBikeVariables(bikeTravelTime,
+        return new CarPtVariables(vehicleTravelTime, euclideanDistance_km_car, accessEgressTime_min_car, cost_MU_car,
                 inVehicleTime_min, waitingTime_min, numberOfLineSwitches, euclideanDistance_km_pt,
                 accessEgressTime_min_pt, cost_MU_pt);
     }
