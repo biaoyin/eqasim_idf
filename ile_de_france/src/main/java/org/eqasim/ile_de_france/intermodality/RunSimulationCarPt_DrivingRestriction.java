@@ -50,7 +50,7 @@ import java.util.List;
 
 public class RunSimulationCarPt_DrivingRestriction {
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/driving_restriction/ile_de_france_configCarInternal.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/driving_restriction/ile_de_france_config_CarInternal.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //

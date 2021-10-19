@@ -167,16 +167,34 @@ public class NetworkModifier {
             remainingCarInternallinksAfterCleaning.add(link.getId());
         }
 
-        // step 4, update the network with cleaned subnetworks
+        // step 4, update the network with cleaned subnetworks (attention, do not remove any links but the modes in the link, unless unique mode in that link)
         int count = 0;
         for (Link link : scenario.getNetwork().getLinks().values()) {
-            if ((!remainingCarlinksAfterCleaning.contains(link.getId()) && link.getAllowedModes().contains(TransportMode.car)) ||
-                    (!remainingCarInternallinksAfterCleaning.contains(link.getId()) && (link.getAllowedModes().contains("carInternal")))) {
-                scenario.getNetwork().removeLink(link.getId());
+            Set<String> allowedModes = link.getAllowedModes();
+            if (!remainingCarlinksAfterCleaning.contains(link.getId()) && allowedModes.contains(TransportMode.car) ) {
+                if (allowedModes.size() == 1) {
+                    scenario.getNetwork().removeLink(link.getId());
+                } else {
+                    Set<String> allowedModesAfter = new HashSet<String>();
+                    allowedModesAfter.addAll(allowedModes);
+                    allowedModesAfter.remove(TransportMode.car);
+                    link.setAllowedModes(allowedModesAfter);
+                }
                 count++;
             }
+            if (!remainingCarInternallinksAfterCleaning.contains(link.getId()) && allowedModes.contains("carInternal")) {
+                if (allowedModes.size() == 1) {
+                    scenario.getNetwork().removeLink(link.getId());
+                } else {
+                    Set<String> allowedModesAfter = new HashSet<String>();
+                    allowedModesAfter.addAll(allowedModes);
+                    allowedModesAfter.remove("carInternal");
+                    link.setAllowedModes(allowedModesAfter);
+                }
+            }
+
         }
-        LOG.info("remove nb of links for updating the network: ");
+        LOG.info("the nb of links with removed car mode for updating the network: ");
         System.out.println(count);
 
         //——————SpeedModifier if needed——————
