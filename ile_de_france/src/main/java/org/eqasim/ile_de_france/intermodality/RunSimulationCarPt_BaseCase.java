@@ -110,11 +110,11 @@ public class RunSimulationCarPt_BaseCase {
 		tourConstraints.add("IntermodalModesConstraint");
 		dmcConfig.setTourConstraints(tourConstraints);
 
-		for (StrategyConfigGroup.StrategySettings strategy : config.strategy().getStrategySettings()) {
-			if(strategy.getStrategyName().equals("DiscreteModeChoice")) {
-				strategy.setWeight(0.20);// all weights from this innovative strategy
-			}
-		}
+//		for (StrategyConfigGroup.StrategySettings strategy : config.strategy().getStrategySettings()) {
+//			if(strategy.getStrategyName().equals("DiscreteModeChoice")) {
+//				strategy.setWeight(0.20);// all weights from this innovative strategy
+//			}
+//		}
 
 //
 		cmd.applyConfiguration(config);

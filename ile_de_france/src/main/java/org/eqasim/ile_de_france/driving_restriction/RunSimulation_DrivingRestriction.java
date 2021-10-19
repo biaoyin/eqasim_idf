@@ -1,16 +1,17 @@
-package org.eqasim.ile_de_france.intermodality;
+package org.eqasim.ile_de_france.driving_restriction;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import org.eqasim.core.components.bike_pt.routing.EqasimBikePtModule;
-import org.eqasim.core.components.bike_pt.routing.EqasimPtBikeModule;
 import org.eqasim.core.components.ParkRideManager;
+import org.eqasim.core.components.car_pt.routing.EqasimCarPtModule;
+import org.eqasim.core.components.car_pt.routing.EqasimPtCarModule;
 import org.eqasim.core.components.config.EqasimConfigGroup;
 import org.eqasim.core.simulation.analysis.EqasimAnalysisModule;
-import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModuleBikePt;
+import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModule;
+import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModuleCarPt;
 import org.eqasim.ile_de_france.IDFConfigurator;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModule;
-import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleBikePt;
+import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPt;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -24,9 +25,11 @@ import org.matsim.core.config.CommandLine;
 import org.matsim.core.config.CommandLine.ConfigurationException;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.*;
+import org.matsim.core.config.groups.GlobalConfigGroup;
+import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
+import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
@@ -42,16 +45,15 @@ import org.matsim.facilities.ActivityFacilities;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehiclesFactory;
 
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-public class RunSimulationBikePt_DrivingRestriction {
+public class RunSimulation_DrivingRestriction {
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/driving_restriction/big-zone-ex2/SaintDenis_config_carInternal.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/driving_restriction/ile_de_france_config_CarInternal.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -59,8 +61,10 @@ public class RunSimulationBikePt_DrivingRestriction {
 				.build();
 
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
+
 		//modify some parameters in config file
-		config.controler().setLastIteration(60);
+		config.controler().setLastIteration(2);
+		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.strategy().setMaxAgentPlanMemorySize(5);
 		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
@@ -68,10 +72,10 @@ public class RunSimulationBikePt_DrivingRestriction {
 		dmcConfig.setEnforceSinglePlan(false);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
-		//1) driving restriction setting : 1st of 2 parts
+		//1) driving restriction setting
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
-		config.network().setInputFile("SaintDenis_network_carInternal.xml.gz");
-		config.plans().setInputFile("SaintDenis_population_carInternal_residentOnly.xml.gz");
+		config.network().setInputFile("ile_de_france_network_carInternal.xml.gz");
+		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");
 		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java
 		config.qsim().setMainModes(Arrays.asList("car","car_passenger","carInternal"));// corresponding adds in emissionRunner
@@ -85,72 +89,14 @@ public class RunSimulationBikePt_DrivingRestriction {
 		eqasimConfig_DRZ.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
 		eqasimConfig_DRZ.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
 
-		//2) Intermodality setting
-		//set Park and ride lot locations
-//		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_1.csv";
-		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_2.csv";
-		List<Coord> parkRideCoords;
-		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
-		parkRideCoords = readFile.readCoords;
-
-        ParkRideManager parkRideManager = new ParkRideManager();
-		parkRideManager.setParkRideCoords(parkRideCoords);
-
-		// Eqasim config definition to add the mode bike_pt estimation
-		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
-		eqasimConfig.setEstimator("bike_pt", "BikePtUtilityEstimator");
-		eqasimConfig.setEstimator("pt_bike", "PtBikeUtilityEstimator");
-
-		// Scoring config definition to add the mode bike_pt parameters
-		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
-		ModeParams bikePtParams = new ModeParams("bike_pt");
-		ModeParams ptBikeParams = new ModeParams("pt_bike");
-		scoringConfig.addModeParams(bikePtParams);
-		scoringConfig.addModeParams(ptBikeParams);
-
-		// "bike_pt interaction" definition
-		ActivityParams paramsbikePtInterAct = new ActivityParams("bikePt interaction");
-		paramsbikePtInterAct.setTypicalDuration(100.0);
-		paramsbikePtInterAct.setScoringThisActivityAtAll(false);
-
-		// "pt_bike interaction" definition
-		ActivityParams paramsPtBikeInterAct = new ActivityParams("ptBike interaction");
-		paramsPtBikeInterAct.setTypicalDuration(100.0);
-		paramsPtBikeInterAct.setScoringThisActivityAtAll(false);
-
-		// Adding "bike_pt interaction" to the scoring
-		scoringConfig.addActivityParams(paramsbikePtInterAct);
-		scoringConfig.addActivityParams(paramsPtBikeInterAct);
-
-		// DMC config definition
-		// Adding the mode "bike_pt" and "pt_bike" to CachedModes
-		Collection<String> cachedModes = new HashSet<>(dmcConfig.getCachedModes());
-		cachedModes.add("bike_pt");
-		cachedModes.add("pt_bike");
-		dmcConfig.setCachedModes(cachedModes);
-
-		// Activation of constraint intermodal modes Using
-	/*	Collection<String> tourConstraints = new HashSet<>(dmcConfig.getTourConstraints());
-		tourConstraints.add("IntermodalModesConstraint");
-		dmcConfig.setTourConstraints(tourConstraints);
-*/
-		/*for (StrategyConfigGroup.StrategySettings strategy : config.strategy().getStrategySettings()) {
-			if(strategy.getStrategyName().equals("DiscreteModeChoice")) {
-				strategy.setWeight(10000);// all weights from this innovative strategy
-			}
-		}
-*/
-//
 		cmd.applyConfiguration(config);
 		Scenario scenario = prepareScenario( config );
 		Controler controller = new Controler(scenario);
-		IDFConfigurator.configureController(controller);
 
+		IDFConfigurator.configureController(controller);
 		controller.addOverridingModule(new EqasimAnalysisModule());
-		controller.addOverridingModule(new EqasimModeChoiceModuleBikePt());
-		controller.addOverridingModule(new IDFModeChoiceModuleBikePt(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));
-		controller.addOverridingModule(new EqasimBikePtModule(parkRideCoords));
-		controller.addOverridingModule(new EqasimPtBikeModule(parkRideCoords));
+		controller.addOverridingModule(new EqasimModeChoiceModule());
+		controller.addOverridingModule(new IDFModeChoiceModule(cmd));
 
 		// 1) driving restriction setting : 2nd of 2 parts: Add a new plan strategy module with mode choice: considering the mode carInternal for subpopulation: residents
 		controller.addOverridingModule( new AbstractModule() {
@@ -216,9 +162,6 @@ public class RunSimulationBikePt_DrivingRestriction {
 
 		controller.run();
 	}
-
-
-
 
 	private static Scenario prepareScenario(Config config) {
 		final Scenario scenario = ScenarioUtils.createScenario( config );
