@@ -14,6 +14,7 @@ import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleBikePt;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.contribs.discrete_mode_choice.model.DiscreteModeChoiceModel;
 import org.matsim.contribs.discrete_mode_choice.modules.config.DiscreteModeChoiceConfigGroup;
@@ -30,6 +31,7 @@ import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.PlanStrategy;
@@ -52,6 +54,8 @@ import java.util.List;
 public class RunSimulationBikePt_DrivingRestriction {
 	static public void main(String[] args) throws ConfigurationException, IOException {
 		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/driving_restriction/big-zone-ex2/SaintDenis_config_carInternal.xml"};
+//		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_1.csv";
+		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_2.csv";
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -86,15 +90,6 @@ public class RunSimulationBikePt_DrivingRestriction {
 		eqasimConfig_DRZ.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
 
 		//2) Intermodality setting
-		//set Park and ride lot locations
-//		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_1.csv";
-		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_2.csv";
-		List<Coord> parkRideCoords;
-		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
-		parkRideCoords = readFile.readCoords;
-
-        ParkRideManager parkRideManager = new ParkRideManager();
-		parkRideManager.setParkRideCoords(parkRideCoords);
 
 		// Eqasim config definition to add the mode bike_pt estimation
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
@@ -145,6 +140,15 @@ public class RunSimulationBikePt_DrivingRestriction {
 		Scenario scenario = prepareScenario( config );
 		Controler controller = new Controler(scenario);
 		IDFConfigurator.configureController(controller);
+
+		//set Park and ride lot locations
+		List<Coord> parkRideCoords;
+		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
+		parkRideCoords = readFile.readCoords;
+		ParkRideManager parkRideManager = new ParkRideManager();
+		parkRideManager.setParkRideCoords(parkRideCoords);
+		Network network = scenario.getNetwork();
+		parkRideManager.setNetwork(network);
 
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModuleBikePt());

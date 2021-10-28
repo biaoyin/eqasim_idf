@@ -14,6 +14,7 @@ import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPt;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.contribs.discrete_mode_choice.model.DiscreteModeChoiceModel;
 import org.matsim.contribs.discrete_mode_choice.modules.config.DiscreteModeChoiceConfigGroup;
@@ -30,6 +31,7 @@ import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.PlanStrategy;
@@ -51,6 +53,7 @@ import java.util.List;
 public class RunSimulationCarPt_DrivingRestriction {
 	static public void main(String[] args) throws ConfigurationException, IOException {
 		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/driving_restriction/ile_de_france_config_CarInternal.xml"};
+		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_1.csv";
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -60,7 +63,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(3);
+		config.controler().setLastIteration(60);
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.strategy().setMaxAgentPlanMemorySize(5);
 		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
@@ -85,14 +88,6 @@ public class RunSimulationCarPt_DrivingRestriction {
 		EqasimConfigGroup eqasimConfig_DRZ = EqasimConfigGroup.get(config);
 		eqasimConfig_DRZ.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
 		eqasimConfig_DRZ.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
-
-		//set Park and ride lot locations
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_1.csv";
-		List<Coord> parkRideCoords;
-		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
-		parkRideCoords = readFile.readCoords;
-        ParkRideManager parkRideManager = new ParkRideManager();
-		parkRideManager.setParkRideCoords(parkRideCoords);
 
 		// Eqasim config definition to add the mode car_pt estimation
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
@@ -144,6 +139,15 @@ public class RunSimulationCarPt_DrivingRestriction {
 		Scenario scenario = prepareScenario( config );
 		Controler controller = new Controler(scenario);
 		IDFConfigurator.configureController(controller);
+
+		//set Park and ride lot locations
+		List<Coord> parkRideCoords;
+		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
+		parkRideCoords = readFile.readCoords;
+		ParkRideManager parkRideManager = new ParkRideManager();
+		parkRideManager.setParkRideCoords(parkRideCoords);
+		Network network = scenario.getNetwork();
+		parkRideManager.setNetwork(network);
 
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModuleCarPt());

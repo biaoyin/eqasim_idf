@@ -1,15 +1,22 @@
 package org.eqasim.core.analysis;
 
 import com.google.inject.Singleton;
+import org.eqasim.core.components.ParkRideManager;
+import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.ActivityStartEvent;
 import org.matsim.api.core.v01.events.handler.ActivityStartEventHandler;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.router.TripStructureUtils;
+import org.matsim.core.utils.geometry.CoordUtils;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Singleton
@@ -20,17 +27,25 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
     private List<Id<Person>> personIdListCarPt = new ArrayList<Id<Person>>();
     private List<Id<Person>> personIdListPtCar = new ArrayList<Id<Person>>();
 
-    private List<Id<Link>> prkIdListCarPt = new ArrayList<Id<Link>>();
-    private List<Id<Link>> prkIdListPtCar = new ArrayList<Id<Link>>();
-    //private OutputDirectoryHierarchy outputDirectory;
+    HashMap<Id<Link>, Integer> prkIdListCarPt = new HashMap<Id<Link>, Integer>();
+    HashMap<Id<Link>, Integer> prkIdListPtCar = new HashMap<Id<Link>, Integer>();
+//    private List<Id<Link>> prkIdListCarPt = new ArrayList<Id<Link>>();
+//    private List<Id<Link>> prkIdListPtCar = new ArrayList<Id<Link>>();
 
     private long carCount = 0;
     private long carPassengerCount = 0;
     private long ptCount = 0;
     private long walkCount = 0;
     private long bikeCount = 0;
+
+    // Park and ride lot location
+    private final List<Coord> parkRideCoords = ParkRideManager.getCoordinates();
+    private final Network network = ParkRideManager.getNetwork();
+
+
     @Override
     public void handleEvent(ActivityStartEvent event) {
+
         if(TripStructureUtils.isStageActivityType(event.getActType())){
             interactionAct += 1;
 
@@ -39,17 +54,30 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
                 if(!personIdListCarPt.contains(event.getPersonId())) {
                     personIdListCarPt.add(event.getPersonId());
                 }
-                if(!prkIdListCarPt.contains(event.getLinkId())) {
+                /*if(!prkIdListCarPt.contains(event.getLinkId())) {
                     prkIdListCarPt.add(event.getLinkId());
+                }*/
+                Integer carPtCount = prkIdListCarPt.get(event.getLinkId());
+                if(carPtCount !=null) {
+                    prkIdListCarPt.put(event.getLinkId(), carPtCount + 1);
+                } else {
+                    prkIdListCarPt.put(event.getLinkId(), 1);
                 }
 
             }
 
             if (event.getActType().equals("ptCar interaction")) {
                 intermodalCountPtCar += 1;
-                if(!prkIdListPtCar.contains(event.getLinkId())) {
-                    prkIdListPtCar.add(event.getLinkId());
+//                if(!prkIdListPtCar.contains(event.getLinkId())) {
+//                    prkIdListPtCar.add(event.getLinkId());
+//                }
+                Integer ptCarCount = prkIdListPtCar.get(event.getLinkId());
+                if(ptCarCount !=null) {
+                    prkIdListPtCar.put(event.getLinkId(), ptCarCount + 1);
+                } else {
+                    prkIdListPtCar.put(event.getLinkId(), 1);
                 }
+
                 if(!personIdListPtCar.contains(event.getPersonId())) {
                     personIdListPtCar.add(event.getPersonId());
                 }
@@ -98,9 +126,9 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
 
         String counter3 = "Id of person in car_pt interaction \n";
 
-        String counter4 = "Id of link car_pt interaction \n";
+        String counter4 = "Id of link car_pt interaction; count; Id of park&ride \n";
 
-        String counter5 = "Id of link pt_car interaction \n";
+        String counter5 = "Id of link pt_car interaction; count; Id of park&ride \n";
 
         String counter6 = "Id of person in pt_car interaction \n";
 
@@ -108,20 +136,62 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
             counter3+=personIdListCarPt.get(i) + "\n";
         }
 
-        for (int i = 0; i < prkIdListCarPt.size(); i++) {
+        /*for (int i = 0; i < prkIdListCarPt.size(); i++) {
             counter4+=prkIdListCarPt.get(i) + "\n";
-        }
+        }*/
 
+        // Biao: find the nearest park&ride location
+        for (Id<Link> name: prkIdListCarPt.keySet()) {
+            String key = name.toString();
+            String value = prkIdListCarPt.get(name).toString();
+
+            double minDist = 999999999.0;
+            double distance = 0.0;
+            int minIndex = 0;
+            Coord linkXY = network.getLinks().get(name).getCoord();
+            for (int i = 0; i < parkRideCoords.size(); i++) {
+                distance = CoordUtils.calcEuclideanDistance(parkRideCoords.get(i), linkXY);
+                if (minDist > distance) {
+                    minDist = distance;
+                    minIndex = i;
+                }
+            }
+            String IdParkRide = Integer.toString(minIndex + 1);
+
+            counter4 += key + ";" + value + ";" + IdParkRide + "\n";
+        }
 
         for (int i = 0; i < personIdListPtCar.size(); i++) {
             counter6+=personIdListPtCar.get(i) + "\n";
         }
 
-        for (int i = 0; i < prkIdListPtCar.size(); i++) {
+        /*for (int i = 0; i < prkIdListPtCar.size(); i++) {
             counter5+=prkIdListPtCar.get(i) + "\n";
+        }*/
+
+        for (Id<Link> name: prkIdListPtCar.keySet()) {
+            String key = name.toString();
+            String value = prkIdListPtCar.get(name).toString();
+
+            double minDist = 999999999.0;
+            double distance = 0.0;
+            int minIndex = 0;
+            Coord linkXY = network.getLinks().get(name).getCoord();
+            for (int i = 0; i < parkRideCoords.size(); i++) {
+                distance = CoordUtils.calcEuclideanDistance(parkRideCoords.get(i), linkXY);
+                if (minDist > distance) {
+                    minDist = distance;
+                    minIndex = i;
+                }
+            }
+            String IdParkRide = Integer.toString(minIndex + 1);
+
+            counter5 += key + ";" + value + ";" + IdParkRide + "\n";
         }
 
-//        File outputFile = new File("C:\\Users\\azise.oumar.diallo\\Documents\\AziseThesis\\GenerationPopulationSynthetique\\MEL_Simulations\\output_0.1p\\count_car_pt\\intermodalCount" + iteration + ".csv");
+
+
+
         File outputFile = new File("simulation_output\\intermodalCount" + iteration + ".csv");
         try {
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile)));
@@ -160,4 +230,5 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
         bikeCount = 0;
 
     }
+
 }

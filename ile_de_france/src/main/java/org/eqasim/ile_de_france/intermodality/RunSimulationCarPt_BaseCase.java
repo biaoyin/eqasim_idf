@@ -10,6 +10,7 @@ import org.eqasim.ile_de_france.IDFConfigurator;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPt;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.contribs.discrete_mode_choice.modules.config.DiscreteModeChoiceConfigGroup;
 import org.matsim.core.config.CommandLine;
 import org.matsim.core.config.CommandLine.ConfigurationException;
@@ -21,6 +22,9 @@ import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.controler.OutputDirectoryHierarchy;
+import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.scenario.ScenarioUtils;
 
 import java.io.IOException;
@@ -30,8 +34,10 @@ import java.util.HashSet;
 import java.util.List;
 
 public class RunSimulationCarPt_BaseCase {
+
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/paris-cut-1pm/Paris_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/base_case/ile_de_france_config.xml"};
+		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_1.csv";
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -41,10 +47,13 @@ public class RunSimulationCarPt_BaseCase {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(3);
+		config.controler().setLastIteration(2);
+		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.strategy().setMaxAgentPlanMemorySize(5);
 		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
+
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
 		dmcConfig.setEnforceSinglePlan(false);
@@ -62,14 +71,6 @@ public class RunSimulationCarPt_BaseCase {
 		strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
 		PlansCalcRouteConfigGroup routingConfig = config.plansCalcRoute();
 		routingConfig.setNetworkModes(Arrays.asList("car", "car_passenger", "truck"));
-
-		//set Park and ride lot locations
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_1.csv";
-		List<Coord> parkRideCoords;
-		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
-		parkRideCoords = readFile.readCoords;
-        ParkRideManager parkRideManager = new ParkRideManager();
-		parkRideManager.setParkRideCoords(parkRideCoords);
 
 		// Eqasim config definition to add the mode car_pt estimation
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
@@ -118,7 +119,6 @@ public class RunSimulationCarPt_BaseCase {
 
 //
 		cmd.applyConfiguration(config);
-
 		Scenario scenario = ScenarioUtils.createScenario(config);
 		IDFConfigurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
@@ -126,6 +126,15 @@ public class RunSimulationCarPt_BaseCase {
 		Controler controller = new Controler(scenario);
 		IDFConfigurator.configureController(controller);
 
+		//set Park and ride lot locations
+		List<Coord> parkRideCoords;
+		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
+		parkRideCoords = readFile.readCoords;
+		ParkRideManager parkRideManager = new ParkRideManager();
+		parkRideManager.setParkRideCoords(parkRideCoords);
+		Network network = scenario.getNetwork();
+		parkRideManager.setNetwork(network);
+//////////
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModuleCarPt());
 		controller.addOverridingModule(new IDFModeChoiceModuleCarPt(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));

@@ -27,8 +27,10 @@ class readParkRideCoordsFromFile {
             br.readLine(); // this will read the first line
             String line = null;
             while ((line = br.readLine()) != null) {
-                xCoordList.add(Double.parseDouble(line.split(";")[0]));
-                yCoordList.add(Double.parseDouble(line.split(";")[1]));
+//                xCoordList.add(Double.parseDouble(line.split(";")[0]));
+//                yCoordList.add(Double.parseDouble(line.split(";")[1]));
+                xCoordList.add(Double.parseDouble(line.split(";")[1]));// add id of the park&ride
+                yCoordList.add(Double.parseDouble(line.split(";")[2]));
             }
         } catch (FileNotFoundException e) {
             System.out.println("check out the input file of parking locations");

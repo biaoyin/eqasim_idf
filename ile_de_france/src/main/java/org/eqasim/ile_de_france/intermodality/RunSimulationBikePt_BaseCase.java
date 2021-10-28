@@ -9,6 +9,7 @@ import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModuleBikePt;
 import org.eqasim.ile_de_france.IDFConfigurator;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleBikePt;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.contribs.discrete_mode_choice.modules.config.DiscreteModeChoiceConfigGroup;
 import org.matsim.core.config.CommandLine;
 import org.matsim.core.config.CommandLine.ConfigurationException;
@@ -19,6 +20,8 @@ import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.*;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.controler.OutputDirectoryHierarchy;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.api.core.v01.Coord;
 
@@ -27,7 +30,9 @@ import java.util.*;
 
 public class RunSimulationBikePt_BaseCase {
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/base_case/big-zone-ex2/SaintDenis_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/saintdenis-cut-10pct/base_case/small-zone-ex3/SaintDenis_config.xml"};
+//		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_1.csv";
+		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_2.csv";
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -37,7 +42,9 @@ public class RunSimulationBikePt_BaseCase {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(60);
+		config.controler().setLastIteration(3);
+		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.strategy().setMaxAgentPlanMemorySize(5);
 		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
@@ -59,15 +66,6 @@ public class RunSimulationBikePt_BaseCase {
 		PlansCalcRouteConfigGroup routingConfig = config.plansCalcRoute();
 		routingConfig.setNetworkModes(Arrays.asList("car", "car_passenger", "truck"));
 
-		//set Park and ride lot locations
-//		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_1.csv";
-		String locationFile = "ile_de_france/scenarios/saint-denis-bike-location_2.csv";
-		List<Coord> parkRideCoords;
-		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
-		parkRideCoords = readFile.readCoords;
-
-        ParkRideManager parkRideManager = new ParkRideManager();
-		parkRideManager.setParkRideCoords(parkRideCoords);
 
 		// Eqasim config definition to add the mode bike_pt estimation
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
@@ -123,6 +121,14 @@ public class RunSimulationBikePt_BaseCase {
 
 		Controler controller = new Controler(scenario);
 		IDFConfigurator.configureController(controller);
+
+		List<Coord> parkRideCoords;
+		readParkRideCoordsFromFile readFile = new readParkRideCoordsFromFile(locationFile);
+		parkRideCoords = readFile.readCoords;
+		ParkRideManager parkRideManager = new ParkRideManager();
+		parkRideManager.setParkRideCoords(parkRideCoords);
+		Network network = scenario.getNetwork();
+		parkRideManager.setNetwork(network);
 
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModuleBikePt());

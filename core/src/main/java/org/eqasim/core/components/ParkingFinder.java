@@ -21,7 +21,7 @@ import java.util.List;
 
 public class ParkingFinder {
     // Park and ride lot location
-    private final List<Coord> parkRideCoords;
+    public final List<Coord> parkRideCoords;
 
     // Constructor
     public ParkingFinder(final List<Coord> parkRideCoords) {

@@ -87,7 +87,7 @@ public class IDFModeChoiceModuleCarPt extends AbstractEqasimExtension {
         // Constraint register
         bindTourConstraintFactory("IntermodalModesConstraint").to(IntermodalModesConstraint.Factory.class);
 
-        // Intermodal count: issue of excuted plan eventhandler here: might it only record the first plan
+        // Intermodal count: issue of excuted plan eventhandler here: might it only record the results before tourconstraint validation.
         addEventHandlerBinding().to(CarPtEventHandler.class);
     }
 

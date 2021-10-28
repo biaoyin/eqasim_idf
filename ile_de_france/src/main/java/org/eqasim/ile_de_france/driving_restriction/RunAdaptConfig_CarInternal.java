@@ -21,7 +21,7 @@ public class RunAdaptConfig_CarInternal {
 
 	static public void main(String[] args) throws ConfigurationException {
 
-		args = new String[] {"--input-path", "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID + "\\matsim_input\\ile_de_france_config_v13.xml",
+		args = new String[] {"--input-path", "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID + "\\matsim_input\\ile_de_france_config.xml",
 				"--output-path", "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID +"\\matsim_input\\PlanA_Paris\\ile_de_france_config_carInternal.xml"};
 
 		ConfigAdapter.run(args, IDFConfigurator.getConfigGroups(), RunAdaptConfig_CarInternal::adaptConfiguration);
