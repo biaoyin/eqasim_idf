@@ -1,7 +1,13 @@
 package org.eqasim.core.components.car_pt.routing;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.eqasim.core.components.ParkingFinder;
+import org.eqasim.core.simulation.mode_choice.cost.CostModel;
+import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
+import org.eqasim.core.simulation.mode_choice.utilities.predictors.PredictorUtils;
 import org.matsim.api.core.v01.Coord;
+import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Activity;
@@ -23,18 +29,18 @@ import java.util.List;
 public class CarPtRoutingModule implements RoutingModule{
     private final RoutingModule carRoutingModule;
     private final Network network;
-
+//    private final ModeParameters parameters;
     // Create an object of a ptRoutingModule
     private final RoutingModule ptRoutingModule;
     private final List<Coord> parkRideCoords;
 
-    // @Inject
+
+    @Inject
     public CarPtRoutingModule(RoutingModule roadRoutingModule, RoutingModule ptRoutingModule, Network network, List<Coord> parkRideCoords) {
         this.carRoutingModule = roadRoutingModule;
         this.ptRoutingModule = ptRoutingModule;
         this.network = network;
         this.parkRideCoords = parkRideCoords;
-
     }
 
     @Override
@@ -47,16 +53,36 @@ public class CarPtRoutingModule implements RoutingModule{
 
         // Creation of a car trip to the PR facility
         List<? extends PlanElement> carElements = carRoutingModule.calcRoute(fromFacility, prkFacility, departureTime,
-                null);
+                person); // Biao: why is this null in default setting?
 
         // double vehicleDistance = Double.NaN;
-        double vehicleTravelTime = Double.NaN;
+        double vehicleTravelTime = 0.0;
         // double price = Double.NaN;
+/*        Leg leg = (Leg) carElements.get(0);
 
-        Leg leg = (Leg) carElements.get(0);
-        // vehicleDistance = leg.getRoute().getDistance();
-        vehicleTravelTime = leg.getRoute().getTravelTime().seconds(); // can not invoke seconds() in this context
-
+        vehicleTravelTime = leg.getRoute().getTravelTime().seconds(); // can not invoke seconds() in this context*/
+        // when considering multi-stage car trips, replace above by
+        boolean flag_walk_time_const = false; //walk leg time is constant or not
+        for (PlanElement element : carElements) {
+            if (element instanceof Leg) {
+                Leg leg = (Leg) element;
+                switch (leg.getMode()) {
+                    case TransportMode.walk:
+                        if (flag_walk_time_const == true) {
+                            vehicleTravelTime += 4.0*60; // see default setting in ModeParameters: constantAccessEgressWalkTime_min
+                        } else{
+                            vehicleTravelTime += leg.getRoute().getTravelTime().seconds(); //
+                        }
+                        break;
+                    case "carInternal":
+                    case TransportMode.car:
+                        vehicleTravelTime += leg.getRoute().getTravelTime().seconds();
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown mode in car trip: " + leg.getMode());
+                }
+            }
+        }
         // Given the request time, we can calculate the waiting time
         double timeToAccessPt = 300; // We take 5 min to park the car and access to PT
 
@@ -70,7 +96,7 @@ public class CarPtRoutingModule implements RoutingModule{
         Link prLink = NetworkUtils.getNearestLink(network, prkFacility.getCoord());
         Activity interactionActivtyCarPt = PopulationUtils.createActivityFromCoordAndLinkId("carPt interaction",
                 prkFacility.getCoord(), prLink.getId());
-        interactionActivtyCarPt.setMaximumDuration(300);// 5 min
+        interactionActivtyCarPt.setMaximumDuration(timeToAccessPt);// 5 min, namely timeToAccessPt
 
         // Creation full trip
         List<PlanElement> allElements = new LinkedList<>();

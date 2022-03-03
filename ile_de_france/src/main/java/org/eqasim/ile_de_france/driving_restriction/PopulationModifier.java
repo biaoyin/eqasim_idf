@@ -19,22 +19,18 @@ import java.util.*;
 public class PopulationModifier {
 
     private static final Logger LOG = Logger.getLogger(PopulationModifier.class);
-    private static final String scenarioID = "ile_de_france_1pm";
+    private static final String scenarioID = "ile-de-france-1pct";
     public static void main(String[] args) throws IOException {
     // Input and output files
-/*
-        String plansInputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID + "\\matsim_input\\BaseCase\\sd_shp_ex2\\SaintDenis_population.xml.gz";
-        String plansOutputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID + "\\matsim_input\\PlanA\\sd_shp_ex2\\SaintDenis_population_carInternal_residentOnly.xml.gz";
-*/
 
-        String plansInputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID + "\\matsim_input\\ile_de_france_population.xml.gz";
-        String plansOutputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID + "\\matsim_input\\PlanA_Paris\\ile_de_france_population_carInternal_residentOnly.xml.gz";
-        String outputFile_ResidentsReader = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\"+ scenarioID +"\\matsim_input\\PlanA_Paris\\personInternalIDsList.txt";
+        String plansInputFile =  "ile_de_france\\scenarios\\" + scenarioID + "\\base_case\\ile_de_france_population.xml.gz";
+        String plansOutputFile =  "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\ile_de_france_population_carInternal_residentOnly.xml.gz";
+        String outputFile_ResidentsReader = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\personInternalIDsList.txt";
 
-        String RedStreets = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\RedLinksID.txt";
-        String GreenStreets ="C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\GreenLinksID.txt";
-        String YellowStreets = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\YellowLinksID.txt";
-        String InternalStreets = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\InternalLinksID.txt";
+        String RedStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\RedLinksID.txt";
+        String GreenStreets ="ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\GreenLinksID.txt";
+        String YellowStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\YellowLinksID.txt";
+        String InternalStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\InternalLinksID.txt";
 
         //1) preparation: switch to list
         // RedStreets
@@ -139,7 +135,7 @@ public class PopulationModifier {
                     }
                 }
             } else{
-                person.getAttributes().putAttribute("subpopulation", "person"); //Added for the rest of people
+                person.getAttributes().putAttribute("subpopulation", "personExternal"); //Added for the rest of people
             }
         }
         LOG.info("the nb of internal residents is:");

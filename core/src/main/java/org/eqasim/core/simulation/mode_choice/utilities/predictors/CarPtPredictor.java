@@ -18,6 +18,8 @@ import org.matsim.core.router.RoutingModule;
 import org.matsim.facilities.Facility;
 import org.matsim.pt.routes.TransitPassengerRoute;
 
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 public class CarPtPredictor extends CachedVariablePredictor<CarPtVariables>{
@@ -48,56 +50,59 @@ public class CarPtPredictor extends CachedVariablePredictor<CarPtVariables>{
 
     @Override
     public CarPtVariables predict(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
+   // elements include the new carpt trip, so no need to recalculate carelements and ptelements
 
+        List<PlanElement> carElements = new LinkedList<>();
+        List<PlanElement> ptElements = new LinkedList<>();
+        boolean flag = true;
+        for (PlanElement element : elements) {
+            if (flag == true) {
+                carElements.add(element);
+            } else {
+                ptElements.add(element);
+            }
 
-        ParkingFinder prFinder = new ParkingFinder(parkRideMana.getCoordinates());
-        //ParkingFinder prFinder = new ParkingFinder(parkRideCoords);
-        Facility prkFacility = prFinder.getParking2(person, trip.getOriginActivity(), trip.getDestinationActivity(),
-                network);
+            if(element instanceof Activity) {
+                Activity act = (Activity) element;
+                if (act.getType().equals("carPt interaction")) {
+                    flag = false;
+                }
+            }
 
-        // Creation of a car leg from Origin to the PR facility
-        Link fromLink = NetworkUtils.getNearestLink(network, trip.getOriginActivity().getCoord());
-        Facility fromFacility = new LinkWrapperFacility(fromLink);
-        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(fromFacility, prkFacility,
-                trip.getDepartureTime(), null);
-        if (carElements.size() > 1) {
-            throw new IllegalStateException("We do not support multi-stage car trips yet.");
         }
 
-        double vehicleTravelTime = Double.NaN;
-        Leg leg_car = (Leg) carElements.get(0);
-        vehicleTravelTime = leg_car.getRoute().getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
+        double vehicleTravelTime = 0.0;
+        double accessEgressTime_min_car = 0.0;
+        for (PlanElement element : carElements) {
+            if (element instanceof Leg) {
+                Leg leg = (Leg) element;
+                switch (leg.getMode()) {
+                    case TransportMode.walk:
+                        accessEgressTime_min_car += leg.getTravelTime().seconds() / 60.0;
+                        break;
+                    case "carInternal":
+                    case TransportMode.car:
+                        vehicleTravelTime += leg.getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown mode in car trip: " + leg.getMode());
+                }
+            }
+        }
 
         // We take 5 min to park the car and access to PT (transfer time)
         double timeToAccessPt = 5;
         vehicleTravelTime += timeToAccessPt;
 
-
-        Activity car_pt = (Activity) populationFactory.createActivityFromCoord("car_pt interaction",
-                prkFacility.getCoord());
-        car_pt.setMaximumDuration(600);// 10 min
-        car_pt.setLinkId(prkFacility.getLinkId());
-
+        PlanElement last_element = carElements.get(carElements.size()-1);
+        Activity car_pt = (Activity) last_element;
         DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(trip.getOriginActivity(), car_pt, "car",
-                carElements, person.hashCode(), leg_car.hashCode(),1000);
+                carElements, person.hashCode(), carElements.get(0).hashCode(),1000);
         double cost_MU_car = carCostModel.calculateCost_MU(person, trip_car, carElements);
-
         double euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
-        double accessEgressTime_min_car = parameters.car.constantAccessEgressWalkTime_min;
-
-        // Creation of a pt leg from the PR facility to Destination
-        double ptDepartureTime = trip.getDepartureTime() + vehicleTravelTime * 60;
-        Link toLink = NetworkUtils.getNearestLink(network, trip.getDestinationActivity().getCoord());
-        Facility toFacility = new LinkWrapperFacility(toLink);
-
-        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(prkFacility, toFacility, ptDepartureTime,
-                person);
 
         DiscreteModeChoiceTrip trip_pt = new DiscreteModeChoiceTrip(car_pt, trip.getDestinationActivity(), "pt",
                 ptElements, person.hashCode(), ptElements.get(0).hashCode(), 1000);
-
-        //DiscreteModeChoiceTrip(Activity originActivity, Activity destinationActivity, String initialMode,
-        //        List<? extends PlanElement> initialElements, int personHash, int tripHash, int index)
 
         int numberOfVehicularTrips = 0;
         boolean isFirstWaitingTime = true;
@@ -127,13 +132,7 @@ public class CarPtPredictor extends CachedVariablePredictor<CarPtVariables>{
                         double inVehicleTime = leg.getTravelTime().seconds() - waitingTime;
 
                         inVehicleTime_min += inVehicleTime / 60.0;
-                        /*
-                        if (!isFirstWaitingTime) {
-                            waitingTime_min += route.getWaitingTime() / 60.0;
-                        } else {
-                            isFirstWaitingTime = false;
-                        }
-                        */
+
                         if (!isFirstWaitingTime) {
                             waitingTime_min += waitingTime / 60.0;
                         } else {

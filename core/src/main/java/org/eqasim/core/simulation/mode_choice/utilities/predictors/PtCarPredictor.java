@@ -18,6 +18,7 @@ import org.matsim.core.router.RoutingModule;
 import org.matsim.facilities.Facility;
 import org.matsim.pt.routes.TransitPassengerRoute;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
@@ -30,6 +31,8 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
     private final Network network;
     private final PopulationFactory populationFactory;
     private final ParkRideManager parkRideMana;
+    private boolean flag_multi_car_stage = true; //use multi_stage car trips or not
+    private boolean flag_walk_time_const = false; //walk leg time is constant or not
 
     @Inject
     public PtCarPredictor(ModeParameters parameters, Network network, @Named("car") RoutingModule carRoutingModule,
@@ -49,23 +52,26 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
     @Override
     public PtCarVariables predict(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
 
-        ParkingFinder prFinder = new ParkingFinder(parkRideMana.getCoordinates());
-        Facility prkFacility = prFinder.getParking2(person, trip.getOriginActivity(), trip.getDestinationActivity(),
-                network);
+        List<PlanElement> carElements = new LinkedList<>();
+        List<PlanElement> ptElements = new LinkedList<>();
+        boolean flag = true;
+        for (PlanElement element : elements) {
+            if (flag == true) {
+                ptElements.add(element);
+            } else {
+                carElements.add(element);
+            }
+            if(element instanceof Activity) {
+                Activity act = (Activity) element;
+                if (act.getType().equals("ptCar interaction")) {
+                    flag = false;
+                }
+            }
 
-        // Creation of a pt leg from the PR facility to Destination
-        Link fromLink = NetworkUtils.getNearestLink(network, trip.getOriginActivity().getCoord());
-        Facility fromFacility = new LinkWrapperFacility(fromLink);
+        }
 
-        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(fromFacility, prkFacility,
-                trip.getDepartureTime(), person);
-
-        // "car_pt interaction" definition
-        Activity car_pt = (Activity) populationFactory.createActivityFromCoord("car_pt interaction",
-                prkFacility.getCoord());
-        car_pt.setMaximumDuration(600);// 10 min
-        car_pt.setLinkId(prkFacility.getLinkId());
-
+        PlanElement last_element = ptElements.get(ptElements.size()-1);
+        Activity car_pt = (Activity) last_element;
         DiscreteModeChoiceTrip trip_pt = new DiscreteModeChoiceTrip(trip.getOriginActivity(), car_pt, "pt",
                 ptElements, person.hashCode(),ptElements.get(0).hashCode(), 1000);
 
@@ -116,34 +122,35 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
 
         // Calculate cost
         double cost_MU_pt = carCostModel.calculateCost_MU(person, trip_pt, ptElements);
-
         double euclideanDistance_km_pt = PredictorUtils.calculateEuclideanDistance_km(trip_pt);
 
-        // Creation of a car leg from PR facility to the Destination
+        double timeToAccessCar = 5;
+        double euclideanDistance_km_car = 0.0;
+        double cost_MU_car= 0.0;
+        double vehicleTravelTime = 0.0;
+        double accessEgressTime_min_car = 0.0;
+        vehicleTravelTime += timeToAccessCar;
+        DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(car_pt, trip.getDestinationActivity(), "car",
+                carElements, person.hashCode(), carElements.get(0).hashCode(), 1000);
 
-        // We take 5 min to park the car and access to PT (transfer time)
-        double timeToAccessPt = 5;
-        double carDepartureTime = trip.getDepartureTime()
-                + (inVehicleTime_min + waitingTime_min + accessEgressTime_min_pt + timeToAccessPt) * 60;
-        Link toLink = NetworkUtils.getNearestLink(network, trip.getDestinationActivity().getCoord());
-        Facility toFacility = new LinkWrapperFacility(toLink);
-
-        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(prkFacility, toFacility, carDepartureTime,
-                null);
-        if (carElements.size() > 1) {
-            throw new IllegalStateException("We do not support multi-stage car trips yet.");
+        for (PlanElement element : carElements) {
+            if (element instanceof Leg) {
+                Leg leg = (Leg) element;
+                switch (leg.getMode()) {
+                    case TransportMode.walk:
+                        accessEgressTime_min_car += leg.getTravelTime().seconds() / 60.0;
+                        break;
+                    case "carInternal":
+                    case TransportMode.car:
+                        vehicleTravelTime += leg.getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
+                        cost_MU_car += ptCostModel.calculateCost_MU(person, trip_car, carElements);
+                        euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown mode in car trip: " + leg.getMode());
+                }
+            }
         }
-
-        double vehicleTravelTime = Double.NaN;
-        Leg leg_car = (Leg) carElements.get(0);
-        vehicleTravelTime = leg_car.getRoute().getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
-
-        DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(car_pt, trip.getOriginActivity(), "car",
-                carElements, person.hashCode(), leg_car.hashCode(),1000);
-        double cost_MU_car = ptCostModel.calculateCost_MU(person, trip_car, carElements);
-
-        double euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
-        double accessEgressTime_min_car = parameters.car.constantAccessEgressWalkTime_min;
 
         return new PtCarVariables(vehicleTravelTime, euclideanDistance_km_car, accessEgressTime_min_car, cost_MU_car,
                 inVehicleTime_min, waitingTime_min, numberOfLineSwitches, euclideanDistance_km_pt,

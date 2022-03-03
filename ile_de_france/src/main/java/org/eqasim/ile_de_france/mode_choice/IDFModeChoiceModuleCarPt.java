@@ -79,8 +79,8 @@ public class IDFModeChoiceModuleCarPt extends AbstractEqasimExtension {
 
         // Register the predictor
         bind(ParkRideManager.class);
-        bind(CarPtPredictor.class);
-        bind(PtCarPredictor.class);
+        //bind(CarPtPredictor.class);
+        //bind(PtCarPredictor.class);
 
         bind(ModeParameters.class).to(IDFModeParameters.class);
 

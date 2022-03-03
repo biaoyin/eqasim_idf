@@ -22,20 +22,18 @@ import java.util.*;
 
 public class NetworkModifier {
     private static final Logger LOG = Logger.getLogger(NetworkModifier.class);
-
+    private static final String scenarioID = "ile-de-france-1pct";
     public static void main (String[] args) throws IOException {
         // Input and output files
-        String networkInputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\ile_de_france_1pm\\matsim_input\\ile_de_france_network.xml.gz";
-        String networkOutputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\ile_de_france_1pm\\matsim_input\\PlanA_Paris\\ile_de_france_network_carInternal.xml.gz";
+        String networkInputFile =  "ile_de_france\\scenarios\\" + scenarioID + "\\base_case\\ile_de_france_network.xml.gz";
+        String networkOutputFile = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\ile_de_france_network_carInternal.xml.gz";
 
+//        String areaShapeFile = "qgis\\paris.shp";
 
-        String areaShapeFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\qgis\\Paris\\paris.shp";
-
-
-        String RedStreets = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\RedLinksID.txt";
-        String GreenStreets ="C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\GreenLinksID.txt";
-        String YellowStreets = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\YellowLinksID.txt";
-        String InternalStreets = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\InternalLinksID.txt";
+        String RedStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\RedLinksID.txt";
+        String GreenStreets ="ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\GreenLinksID.txt";
+        String YellowStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\YellowLinksID.txt";
+        String InternalStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\InternalLinksID.txt";
 
         //1) preparation: switch to list
         // RedStreets
@@ -216,11 +214,11 @@ public class NetworkModifier {
         }
 
         // for redStreets
-        for (int i = 0; i < RedStreetsList.size(); i++) {
+        /*for (int i = 0; i < RedStreetsList.size(); i++) {
             if(cleanedNetworkLinkIDList.contains(RedStreetsList.get(i))) {
                 scenario.getNetwork().getLinks().get(Id.createLinkId(RedStreetsList.get(i))).setFreespeed(19.44);
             }
-        }
+        }*/
 
         LOG.info("after modification, the number of new network links");
         System.out.println(scenario.getNetwork().getLinks().size());

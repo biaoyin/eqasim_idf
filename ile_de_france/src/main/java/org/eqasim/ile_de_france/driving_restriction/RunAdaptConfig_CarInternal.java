@@ -17,12 +17,12 @@ import java.util.Arrays;
 
 public class RunAdaptConfig_CarInternal {
     // set input-path and output-path
-	private static final String scenarioID = "ile_de_france_1pm";
+	private static final String scenarioID = "ile-de-france-1pm";
 
 	static public void main(String[] args) throws ConfigurationException {
 
-		args = new String[] {"--input-path", "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID + "\\matsim_input\\ile_de_france_config.xml",
-				"--output-path", "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\" + scenarioID +"\\matsim_input\\PlanA_Paris\\ile_de_france_config_carInternal.xml"};
+		args = new String[] {"--input-path", "ile_de_france\\scenarios\\" + scenarioID + "\\base_case\\ile_de_france_config.xml",
+				"--output-path", "ile_de_france\\scenarios\\" + scenarioID +"\\driving_restriction\\ile_de_france_config_carInternal.xml"};
 
 		ConfigAdapter.run(args, IDFConfigurator.getConfigGroups(), RunAdaptConfig_CarInternal::adaptConfiguration);
 	}
@@ -45,74 +45,33 @@ public class RunAdaptConfig_CarInternal {
 
 
         //BYIN: strategy settings:
-
-		//1) changes innovative and selector strategies
-		//1-1) for subpopulation = person
-		StrategySettings strategySettings_mode = new StrategySettings();
-		strategySettings_mode.setStrategyName("ChangeSingleTripMode");
-		strategySettings_mode.setSubpopulation("person");
-		strategySettings_mode.setWeight(0.05);
-
-//		StrategySettings strategySettings_route = new StrategySettings();
-//		strategySettings_route.setStrategyName("ReRoute");
-//		strategySettings_route.setSubpopulation("person");
-//		strategySettings_route.setWeight(0.05);
-
-/*
-		StrategySettings strategySettings_time = new StrategySettings();
-		strategySettings_time.setStrategyName("TimeAllocationMutator");
-		strategySettings_time.setSubpopulation("person");
-		strategySettings_time.setWeight(0.05);
-*/
-
-		//Replace default strategy settings in eqasim
+		//Replace default strategy settings in eqasim considering DRZ
 		for (StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals(DiscreteModeChoiceModule.STRATEGY_NAME)) {
-				ss.setSubpopulation("person");
+				ss.setSubpopulation("personExternal");
+				ss.setWeight(0.05);
 			}
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
-				ss.setStrategyName("ChangeExpBeta");
-				ss.setSubpopulation("person");
-				ss.setWeight(0.90);
+//				ss.setStrategyName("ChangeExpBeta");
+				ss.setSubpopulation("personExternal");
+				ss.setWeight(0.95);
 			}
 		}
 
 		//1-1) for subpopulation = personInternal
 		StrategySettings strategySettings_mode_int = new StrategySettings();
-		strategySettings_mode_int.setStrategyName("DiscreteModeChoiceInternal");
+		strategySettings_mode_int.setStrategyName("DiscreteModeChoice");  //others: ReRoute, TimeAllocationMutator
 		strategySettings_mode_int.setSubpopulation("personInternal");
 		strategySettings_mode_int.setWeight(0.05);
 
 		StrategySettings strategySettings_mode_int2 = new StrategySettings();
-		strategySettings_mode_int2.setStrategyName("ChangeSingleTripMode");
+		strategySettings_mode_int2.setStrategyName("KeepLastSelected");  //ChangeExpBeta
 		strategySettings_mode_int2.setSubpopulation("personInternal");
-		strategySettings_mode_int2.setWeight(0.05);
-
-//		StrategySettings strategySettings_route_int = new StrategySettings();
-//		strategySettings_route_int.setStrategyName("ReRoute");
-//		strategySettings_route_int.setSubpopulation("personInternal");
-//		strategySettings_route_int.setWeight(0.05);
-
-/*		StrategySettings strategySettings_time_int = new StrategySettings();
-		strategySettings_time_int.setStrategyName("TimeAllocationMutator");
-		strategySettings_time_int.setSubpopulation("personInternal");
-		strategySettings_time_int.setWeight(0.05);*/
-
-		StrategySettings strategySettings_sel_int = new StrategySettings();
-		strategySettings_sel_int.setStrategyName("ChangeExpBeta");
-		strategySettings_sel_int.setSubpopulation("personInternal");
-		strategySettings_sel_int.setWeight(0.90);
-
+		strategySettings_mode_int2.setWeight(0.95);
 
 		StrategyConfigGroup strategyConfig = config.strategy();
-		strategyConfig.addStrategySettings(strategySettings_mode);
-//		strategyConfig.addStrategySettings(strategySettings_route);
-//		strategyConfig.addStrategySettings(strategySettings_time);
 		strategyConfig.addStrategySettings(strategySettings_mode_int);
 		strategyConfig.addStrategySettings(strategySettings_mode_int2);
-//		strategyConfig.addStrategySettings(strategySettings_route_int);
-//		strategyConfig.addStrategySettings(strategySettings_time_int);
-		strategyConfig.addStrategySettings(strategySettings_sel_int);
 		//and others
 		strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
 
@@ -120,9 +79,9 @@ public class RunAdaptConfig_CarInternal {
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
 		dmcConfig.setModeAvailability(IDFModeChoiceModule.MODE_AVAILABILITY_NAME);
 
-		//BYIN: we consider subpopulation's mode choice
-		dmcConfig.setEnforceSinglePlan(false);
-
+		//BYIN: we consider mode choice strategy without sizeofMemories = 1
+//		dmcConfig.setEnforceSinglePlan(false);
+//
 		// Calibration results for 5%
 		if (eqasimConfig.getSampleSize() == 0.05) {
 			// Adjust flow and storage capacity

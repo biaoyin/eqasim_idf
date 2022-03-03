@@ -148,14 +148,17 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
             double minDist = 999999999.0;
             double distance = 0.0;
             int minIndex = 0;
-            Coord linkXY = network.getLinks().get(name).getCoord();
-            for (int i = 0; i < parkRideCoords.size(); i++) {
-                distance = CoordUtils.calcEuclideanDistance(parkRideCoords.get(i), linkXY);
-                if (minDist > distance) {
-                    minDist = distance;
-                    minIndex = i;
+            if (iteration == 60) {
+                Coord linkXY = network.getLinks().get(name).getCoord();
+                for (int i = 0; i < parkRideCoords.size(); i++) {
+                    distance = CoordUtils.calcEuclideanDistance(parkRideCoords.get(i), linkXY);
+                    if (minDist > distance) {
+                        minDist = distance;
+                        minIndex = i;
+                    }
                 }
             }
+
             String IdParkRide = Integer.toString(minIndex + 1);
 
             counter4 += key + ";" + value + ";" + IdParkRide + "\n";
@@ -176,12 +179,14 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
             double minDist = 999999999.0;
             double distance = 0.0;
             int minIndex = 0;
-            Coord linkXY = network.getLinks().get(name).getCoord();
-            for (int i = 0; i < parkRideCoords.size(); i++) {
-                distance = CoordUtils.calcEuclideanDistance(parkRideCoords.get(i), linkXY);
-                if (minDist > distance) {
-                    minDist = distance;
-                    minIndex = i;
+            if (iteration==60) {
+                Coord linkXY = network.getLinks().get(name).getCoord();
+                for (int i = 0; i < parkRideCoords.size(); i++) {
+                    distance = CoordUtils.calcEuclideanDistance(parkRideCoords.get(i), linkXY);
+                    if (minDist > distance) {
+                        minDist = distance;
+                        minIndex = i;
+                    }
                 }
             }
             String IdParkRide = Integer.toString(minIndex + 1);

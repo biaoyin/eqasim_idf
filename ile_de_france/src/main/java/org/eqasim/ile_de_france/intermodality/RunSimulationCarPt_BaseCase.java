@@ -20,6 +20,7 @@ import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
+import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
@@ -37,7 +38,7 @@ public class RunSimulationCarPt_BaseCase {
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
 		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/base_case/ile_de_france_config.xml"};
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_1.csv";
+		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_2021plus.csv";
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -47,30 +48,30 @@ public class RunSimulationCarPt_BaseCase {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(2);
-		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
-
-		config.vehicles().setVehiclesFile("vehicle_types.xml");
-		config.strategy().setMaxAgentPlanMemorySize(5);
-		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
-
+		config.controler().setLastIteration(100);
+		config.strategy().setMaxAgentPlanMemorySize(1);// be subject to the setEnforceSinglePlan to ensure vehicle tour constraint
+//		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-		dmcConfig.setEnforceSinglePlan(false);
+		dmcConfig.setEnforceSinglePlan(true);
+		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+
+		// multistage car trips
+		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
+		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
+
+		config.vehicles().setVehiclesFile("vehicle_types.xml");
+		config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
+		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);
+
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
-				ss.setStrategyName("ChangeExpBeta");
-				ss.setWeight(0.90);
+				ss.setWeight(0.80);
+			}
+			if (ss.getStrategyName().equals("DiscreteModeChoice")) {
+				ss.setWeight(0.20);
 			}
 		}
-		StrategyConfigGroup.StrategySettings strategySettings_mode = new StrategyConfigGroup.StrategySettings();
-		strategySettings_mode.setStrategyName("ChangeSingleTripMode");
-		strategySettings_mode.setWeight(0.05);
-		StrategyConfigGroup strategyConfig = config.strategy();
-		strategyConfig.addStrategySettings(strategySettings_mode);
-		strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
-		PlansCalcRouteConfigGroup routingConfig = config.plansCalcRoute();
-		routingConfig.setNetworkModes(Arrays.asList("car", "car_passenger", "truck"));
 
 		// Eqasim config definition to add the mode car_pt estimation
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
@@ -111,13 +112,6 @@ public class RunSimulationCarPt_BaseCase {
 		tourConstraints.add("IntermodalModesConstraint");
 		dmcConfig.setTourConstraints(tourConstraints);
 
-//		for (StrategyConfigGroup.StrategySettings strategy : config.strategy().getStrategySettings()) {
-//			if(strategy.getStrategyName().equals("DiscreteModeChoice")) {
-//				strategy.setWeight(0.20);// all weights from this innovative strategy
-//			}
-//		}
-
-//
 		cmd.applyConfiguration(config);
 		Scenario scenario = ScenarioUtils.createScenario(config);
 		IDFConfigurator.configureScenario(scenario);

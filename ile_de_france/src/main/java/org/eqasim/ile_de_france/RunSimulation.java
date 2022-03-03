@@ -16,7 +16,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 
 public class RunSimulation {
 	static public void main(String[] args) throws ConfigurationException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/paris-cut-1pm/Paris_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/base_case/ile_de_france_config.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -25,12 +25,12 @@ public class RunSimulation {
 
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 		//modify some parameters in config file
-		config.controler().setLastIteration(10);
-		config.strategy().setMaxAgentPlanMemorySize(5);
-		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
+		config.controler().setLastIteration(60);
+//		config.strategy().setMaxAgentPlanMemorySize(5);
+//		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-		dmcConfig.setEnforceSinglePlan(false);
+//		dmcConfig.setEnforceSinglePlan(false);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.overwriteExistingFiles);
         //
 		cmd.applyConfiguration(config);

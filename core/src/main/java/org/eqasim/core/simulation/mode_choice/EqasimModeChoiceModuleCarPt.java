@@ -66,6 +66,9 @@ public class EqasimModeChoiceModuleCarPt extends AbstractEqasimExtension {
 		bind(WalkPredictor.class);
 		bind(PersonPredictor.class);
 
+		bind(CarPtPredictor.class);
+		bind(PtCarPredictor.class);
+
 		bindUtilityEstimator(ZERO_ESTIMATOR_NAME).to(ZeroUtilityEstimator.class);
 		bindUtilityEstimator(CAR_ESTIMATOR_NAME).to(CarUtilityEstimator.class);
 		bindUtilityEstimator(PT_ESTIMATOR_NAME).to(PtUtilityEstimator.class);

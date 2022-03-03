@@ -1,7 +1,9 @@
 package org.eqasim.core.components.car_pt.routing;
 
+import com.google.inject.Inject;
 import org.eqasim.core.components.ParkingFinder;
 import org.matsim.api.core.v01.Coord;
+import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Activity;
@@ -23,12 +25,11 @@ import java.util.List;
 public class PtCarRoutingModule implements RoutingModule{
     private final RoutingModule carRoutingModule;
     private final Network network;
-
     // Create an object of a ptRoutingModule
     private final RoutingModule ptRoutingModule;
-
     private final List<Coord> parkRideCoords;
 
+    @Inject
     public PtCarRoutingModule(RoutingModule ptRoutingModule, RoutingModule roadRoutingModule, Network network, List<Coord> parkRideCoords) {
         this.carRoutingModule = roadRoutingModule;
         this.ptRoutingModule = ptRoutingModule;
@@ -38,27 +39,11 @@ public class PtCarRoutingModule implements RoutingModule{
     }
 
     @Override
-/*
-	 public List<? extends PlanElement> calcRoute(Facility fromFacility, Facility
-	 toFacility, double departureTime, Person person) {
-	//Id<AVOperator> operatorId = choiceStrategy.chooseRandomOperator();
-	//return calcRoute(fromFacility, toFacility, departureTime, person, operatorId);
-	 Leg leg = PopulationUtils.createLeg("car_pt"); leg.setTravelTime(600.0);
-	 Route route = new GenericRouteImpl(fromFacility.getLinkId(), toFacility.getLinkId()); route.setTravelTime(600.0);
-	 route.setDistance(100.0);
-	 leg.setRoute(route);
-	 return Collections.singletonList(leg);
-	 }
-	 */
-
     public List<? extends PlanElement> calcRoute(Facility fromFacility, Facility toFacility, double departureTime,
                                                  Person person) {
         // Park and ride lot location
 
         ParkingFinder prFinder = new ParkingFinder(parkRideCoords);
-        //Facility prFacility = prFinder.getParking(person, fromFacility, toFacility, network);
-
-
         Facility prkFacility = prFinder.getParking(person, fromFacility, toFacility, network);
 
         // Creation of a PT trip from the destination point to PR facility
@@ -66,27 +51,46 @@ public class PtCarRoutingModule implements RoutingModule{
                 person);
 
         // double vehicleDistance = Double.NaN;
-        double vehicleTravelTime = Double.NaN;
+        double vehicleTravelTime = 0.0;
         // double price = Double.NaN;
 
-        Leg leg = (Leg) ptElements.get(0);
+       /* Leg leg = (Leg) ptElements.get(0);
         // vehicleDistance = leg.getRoute().getDistance();
         vehicleTravelTime = leg.getRoute().getTravelTime().seconds();
+*/
+        // when considering multi-stage car trips, replace above by
+        boolean flag_walk_time_const = false; //walk leg time is constant or not
+        for (PlanElement element : ptElements) {
+            if (element instanceof Leg) {
+                Leg leg = (Leg) element;
+                switch (leg.getMode()) {
+                    case TransportMode.walk:
+                        vehicleTravelTime += leg.getRoute().getTravelTime().seconds();
+                        break;
+                    case TransportMode.pt:
+                        vehicleTravelTime += leg.getRoute().getTravelTime().seconds();
+                        break;
+                    default:
+                        throw new IllegalStateException("Unknown mode in pt trip: " + leg.getMode());
+                }
+            }
+        }
+
 
         // Given the request time, we can calculate the waiting time
         double timeToAccessCar = 300; // We take 5 min to park the car and access to PT
 
         double carDepartureTime = departureTime + vehicleTravelTime + timeToAccessCar;
 
-        // Creation of a the car trip from the PR facility to the origin point (home)
+        // Creation of a  car trip from the PR facility to the origin point (home)
         List<? extends PlanElement> carElements = carRoutingModule.calcRoute(prkFacility, toFacility, carDepartureTime,
-                null);
+                person); // Biao: why is this null in default setting?
 
         // Creation interaction between pt and car
         Link prLink = NetworkUtils.getNearestLink(network, prkFacility.getCoord());
         Activity interactionActivtyPtCar = PopulationUtils.createActivityFromCoordAndLinkId("ptCar interaction",
                 prkFacility.getCoord(), prLink.getId());
-        interactionActivtyPtCar.setMaximumDuration(300);// 5 min
+        interactionActivtyPtCar.setMaximumDuration(timeToAccessCar);// 5 min
 
         // Creation full trip
         List<PlanElement> allElements = new LinkedList<>();

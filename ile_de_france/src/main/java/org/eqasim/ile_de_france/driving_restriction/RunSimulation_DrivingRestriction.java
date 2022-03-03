@@ -25,11 +25,9 @@ import org.matsim.core.config.CommandLine;
 import org.matsim.core.config.CommandLine.ConfigurationException;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.GlobalConfigGroup;
-import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
+import org.matsim.core.config.groups.*;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
-import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
@@ -53,7 +51,7 @@ import java.util.List;
 
 public class RunSimulation_DrivingRestriction {
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/driving_restriction/ile_de_france_config_CarInternal.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/driving_restriction/ile_de_france_config_carInternal.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -64,21 +62,35 @@ public class RunSimulation_DrivingRestriction {
 
 		//modify some parameters in config file
 		config.controler().setLastIteration(2);
-		config.vehicles().setVehiclesFile("vehicle_types.xml");
-		config.strategy().setMaxAgentPlanMemorySize(5);
-		config.strategy().setPlanSelectorForRemoval("WorstPlanSelector");
-		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
-				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-		dmcConfig.setEnforceSinglePlan(false);
+		config.strategy().setMaxAgentPlanMemorySize(1);
+//		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
+//		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
+//				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
+		//dmcConfig.setEnforceSinglePlan(true);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+
+		// multistage car trips
+		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
+		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
+
 
 		//1) driving restriction setting
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.network().setInputFile("ile_de_france_network_carInternal.xml.gz");
-		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");
+		config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
 		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java
-		config.qsim().setMainModes(Arrays.asList("car","car_passenger","carInternal"));// corresponding adds in emissionRunner
+		config.qsim().setMainModes(Arrays.asList("car","carInternal"));// corresponding adds in emissionRunner
+
+		//for original setting
+		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
+			if (ss.getStrategyName().equals("KeepLastSelected")) {
+				ss.setWeight(0.80);
+			}
+			if (ss.getStrategyName().equals("DiscreteModeChoice")) {
+				ss.setWeight(0.20);
+			}
+		}
 		//add parameters of the new mode and related: discrete mode choice in eqasim
 		// Scoring config
 		PlanCalcScoreConfigGroup scoringConfig_DRZ = config.planCalcScore();
@@ -88,7 +100,7 @@ public class RunSimulation_DrivingRestriction {
 		EqasimConfigGroup eqasimConfig_DRZ = EqasimConfigGroup.get(config);
 		eqasimConfig_DRZ.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
 		eqasimConfig_DRZ.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
-
+		 //
 		cmd.applyConfiguration(config);
 		Scenario scenario = prepareScenario( config );
 		Controler controller = new Controler(scenario);
@@ -103,8 +115,8 @@ public class RunSimulation_DrivingRestriction {
 			@Override
 			public void install() {
 				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);// for subTourModeChoice in v13
-				// define second mode choice strategy:
-				this.addPlanStrategyBinding("DiscreteModeChoiceInternal").toProvider(new Provider<PlanStrategy>(){
+				// define second mode choice strategy: other name: DiscreteModeChoiceInternal? but rename is impossible when setEnforceSinglePlan=true
+				this.addPlanStrategyBinding("DiscreteModeChoice").toProvider(new Provider<PlanStrategy>(){
 					@Inject
 					private GlobalConfigGroup globalConfigGroup;
 					@Inject
@@ -125,11 +137,11 @@ public class RunSimulation_DrivingRestriction {
 
 						DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 								.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-
+						//dmcConfig.setEnforceSinglePlan(true);
 						Collection<String> cachedModes = new HashSet<>(dmcConfig.getCachedModes());
-						cachedModes.add("carInternal");
+						cachedModes.add("carInternal");// doesn't need to set in IDFModeAvailability?
 						dmcConfig.setCachedModes(cachedModes);
-						dmcConfig.getVehicleTourConstraintConfig().setRestrictedModes(Arrays.asList("carInternal", "bike"));
+						dmcConfig.getVehicleTourConstraintConfig().setRestrictedModes(Arrays.asList("car","carInternal", "bike"));
 
 						PlanStrategyImpl.Builder builder = new PlanStrategyImpl.Builder(new RandomPlanSelector<>());
 						builder.addStrategyModule(new DiscreteModeChoiceReplanningModule(globalConfigGroup, modeChoiceModelProvider,
