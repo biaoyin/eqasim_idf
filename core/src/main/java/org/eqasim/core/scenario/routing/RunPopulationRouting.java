@@ -23,8 +23,8 @@ public class RunPopulationRouting {
 				.allowOptions("threads", "batch-size", "modes") //
 				.build();
 
-		EqasimConfigurator configurator = new EqasimConfigurator();
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"),
+				EqasimConfigurator.getConfigGroups());
 		cmd.applyConfiguration(config);
 		config.strategy().clearStrategySettings();
 
@@ -51,7 +51,7 @@ public class RunPopulationRouting {
 		}
 
 		Injector injector = new InjectorBuilder(scenario) //
-				.addOverridingModules(configurator.getModules()) //
+				.addOverridingModules(EqasimConfigurator.getModules()) //
 				.addOverridingModule(new PopulationRouterModule(numberOfThreads, batchSize, true, modes)) //
 				.build();
 

@@ -21,16 +21,16 @@ public class RunSimulation {
 				.allowPrefixes("mode-parameter", "cost-parameter") //
 				.build();
 
-		EqasimConfigurator configurator = new EqasimConfigurator();
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"),
+				EqasimConfigurator.getConfigGroups());
 		EqasimConfigGroup.get(config).setTripAnalysisInterval(5);
 		EqasimConfigGroup.get(config).setDistanceUnit(DistanceUnit.foot);
 		cmd.applyConfiguration(config);
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		configurator.configureScenario(scenario);
+		EqasimConfigurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
-		configurator.adjustScenario(scenario);
+		EqasimConfigurator.adjustScenario(scenario);
 
 		EqasimConfigGroup eqasimConfig = (EqasimConfigGroup) config.getModules().get(EqasimConfigGroup.GROUP_NAME);
 		eqasimConfig.setEstimator("walk", "laWalkEstimator");
@@ -38,7 +38,7 @@ public class RunSimulation {
 		eqasimConfig.setEstimator("car", "laCarEstimator");
 
 		Controler controller = new Controler(scenario);
-		configurator.configureController(controller);
+		EqasimConfigurator.configureController(controller);
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new LosAngelesModeChoiceModule(cmd));
 		controller.addOverridingModule(new EqasimAnalysisModule());

@@ -18,18 +18,18 @@ public class RunSimulation {
 				.allowPrefixes("mode-parameter", "cost-parameter") //
 				.build();
 
-		SwitzerlandConfigurator configurator = new SwitzerlandConfigurator();
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"),
+				SwitzerlandConfigurator.getConfigGroups());
 		cmd.applyConfiguration(config);
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
 
-		configurator.configureScenario(scenario);
+		SwitzerlandConfigurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
-		configurator.adjustScenario(scenario);
+		SwitzerlandConfigurator.adjustScenario(scenario);
 
 		Controler controller = new Controler(scenario);
-		configurator.configureController(controller);
+		SwitzerlandConfigurator.configureController(controller);
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new SwissModeChoiceModule(cmd));

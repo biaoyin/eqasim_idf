@@ -35,11 +35,11 @@ public class RunBatchPublicTransportRouter {
 			IOException, InterruptedException {
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path", "input-path", "output-path") //
-				.allowOptions("threads", "batch-size", "interval", "transfer-utility", "write-route") //
+				.allowOptions("threads", "batch-size", "interval", "transfer-utility") //
 				.build();
 
-		EqasimConfigurator configurator = new EqasimConfigurator();
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"),
+				EqasimConfigurator.getConfigGroups());
 		cmd.applyConfiguration(config);
 
 		if (cmd.hasOption("transfer-utility")) {
@@ -47,17 +47,16 @@ public class RunBatchPublicTransportRouter {
 		}
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		configurator.configureScenario(scenario);
+		EqasimConfigurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		int numberOfThreads = cmd.getOption("threads").map(Integer::parseInt)
 				.orElse(Runtime.getRuntime().availableProcessors());
 		int batchSize = cmd.getOption("batch-size").map(Integer::parseInt).orElse(100);
 		double interval = (double) cmd.getOption("interval").map(Integer::parseInt).orElse(0);
-		boolean writeRoute = cmd.getOption("write-route").map(Boolean::parseBoolean).orElse(false);
 
 		Injector injector = new InjectorBuilder(scenario) //
-				.addOverridingModules(configurator.getModules()) //
+				.addOverridingModules(EqasimConfigurator.getModules()) //
 				.addOverridingModule(new HeadwayImputerModule(numberOfThreads, batchSize, false, interval)).build();
 
 		Provider<TransitRouter> routerProvider = injector.getProvider(TransitRouter.class);
@@ -66,7 +65,7 @@ public class RunBatchPublicTransportRouter {
 		Network network = injector.getInstance(Network.class);
 
 		BatchPublicTransportRouter batchRouter = new BatchPublicTransportRouter(routerProvider,
-				headwayCalculatorProvider, schedule, network, batchSize, numberOfThreads, interval, writeRoute);
+				headwayCalculatorProvider, schedule, network, batchSize, numberOfThreads, interval);
 
 		CsvMapper mapper = new CsvMapper();
 

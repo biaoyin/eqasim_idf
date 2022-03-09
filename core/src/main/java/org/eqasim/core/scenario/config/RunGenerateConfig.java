@@ -14,8 +14,7 @@ public class RunGenerateConfig {
 				.allowOptions("random-seed") //
 				.build();
 
-		EqasimConfigurator configurator = new EqasimConfigurator();
-		Config config = ConfigUtils.createConfig(configurator.getConfigGroups());
+		Config config = ConfigUtils.createConfig(EqasimConfigurator.getConfigGroups());
 
 		String prefix = cmd.getOptionStrict("prefix");
 		double sampleSize = Double.parseDouble(cmd.getOptionStrict("sample-size"));

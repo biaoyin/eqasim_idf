@@ -28,19 +28,18 @@ public class RunCorsicaVDFSimulation {
 				.allowPrefixes("mode-parameter", "cost-parameter") //
 				.build();
 
-		IDFConfigurator configurator = new IDFConfigurator();
 		URL configUrl = Resources.getResource("corsica/corsica_config.xml");
-		Config config = ConfigUtils.loadConfig(configUrl, configurator.getConfigGroups());
+		Config config = ConfigUtils.loadConfig(configUrl, IDFConfigurator.getConfigGroups());
 
 		config.controler().setLastIteration(2);
 		config.addModule(new VDFConfigGroup());
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		configurator.configureScenario(scenario);
+		IDFConfigurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		Controler controller = new Controler(scenario);
-		configurator.configureController(controller);
+		IDFConfigurator.configureController(controller);
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new IDFModeChoiceModule(cmd));

@@ -59,8 +59,8 @@ public class RunScenarioCutter {
 		ScenarioExtent extent = new ShapeScenarioExtent.Builder(extentPath, extentAttribute, extentValue).build();
 
 		// Load scenario
-		EqasimConfigurator configurator = new EqasimConfigurator();
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"),
+				EqasimConfigurator.getConfigGroups());
 		cmd.applyConfiguration(config);
 
 		Optional<String> plansPath = cmd.getOption("plans-path");
@@ -76,7 +76,7 @@ public class RunScenarioCutter {
 		}
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		configurator.configureScenario(scenario);
+		EqasimConfigurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		// Check validity before cutting
@@ -96,7 +96,7 @@ public class RunScenarioCutter {
 
 		// Cut population
 		Injector populationCutterInjector = new InjectorBuilder(scenario) //
-				.addOverridingModules(configurator.getModules()) //
+				.addOverridingModules(EqasimConfigurator.getModules()) //
 				.addOverridingModule(
 						new PopulationCutterModule(extent, numberOfThreads, 40, cmd.getOption("events-path"))) //
 				.addOverridingModule(new CutterTravelTimeModule(travelTime)) //
@@ -141,14 +141,14 @@ public class RunScenarioCutter {
 
 		// "Cut" config
 		// (we need to reload it, because it has become locked at this point)
-		config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
+		config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), EqasimConfigurator.getConfigGroups());
 		cmd.applyConfiguration(config);
 		ConfigCutter configCutter = new ConfigCutter(prefix);
 		configCutter.run(config);
 
 		// Final routing
 		Injector routingInjector = new InjectorBuilder(scenario) //
-				.addOverridingModules(configurator.getModules()) //
+				.addOverridingModules(EqasimConfigurator.getModules()) //
 				.addOverridingModule(new PopulationRouterModule(numberOfThreads, 100, false)) //
 				.addOverridingModule(new CutterTravelTimeModule(travelTime)) //
 				.build();

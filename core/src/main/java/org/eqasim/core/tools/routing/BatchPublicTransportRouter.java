@@ -3,7 +3,6 @@ package org.eqasim.core.tools.routing;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.eqasim.core.components.headway.HeadwayCalculator;
@@ -17,12 +16,8 @@ import org.matsim.core.router.LinkWrapperFacility;
 import org.matsim.facilities.Facility;
 import org.matsim.pt.router.TransitRouter;
 import org.matsim.pt.routes.TransitPassengerRoute;
-import org.matsim.pt.transitSchedule.api.TransitLine;
-import org.matsim.pt.transitSchedule.api.TransitRoute;
 import org.matsim.pt.transitSchedule.api.TransitSchedule;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Provider;
 
 public class BatchPublicTransportRouter {
@@ -34,11 +29,10 @@ public class BatchPublicTransportRouter {
 	private final int batchSize;
 	private final int numberOfThreads;
 	private final double interval;
-	private final boolean writeRoute;
 
 	public BatchPublicTransportRouter(Provider<TransitRouter> routerProvider,
 			Provider<HeadwayCalculator> headwayCalculatorProvider, TransitSchedule schedule, Network network,
-			int batchSize, int numberOfThreads, double interval, boolean writeRoute) {
+			int batchSize, int numberOfThreads, double interval) {
 		this.routerProvider = routerProvider;
 		this.headwayCalculatorProvider = headwayCalculatorProvider;
 		this.batchSize = batchSize;
@@ -46,7 +40,6 @@ public class BatchPublicTransportRouter {
 		this.schedule = schedule;
 		this.network = network;
 		this.interval = interval;
-		this.writeRoute = writeRoute;
 	}
 
 	public Collection<Result> run(Collection<Task> tasks) throws InterruptedException {
@@ -113,7 +106,6 @@ public class BatchPublicTransportRouter {
 					Facility toFacility = new LinkWrapperFacility(NetworkUtils.getNearestLink(network, toCoord));
 
 					List<Leg> legs = router.calcRoute(fromFacility, toFacility, task.departureTime, null);
-					List<RouteInformation> routeInformation = new LinkedList<>();
 
 					if (legs != null) {
 						boolean isFirstVehicularLeg = true;
@@ -159,13 +151,12 @@ public class BatchPublicTransportRouter {
 									result.transferWaitingTime_min += waitingTime / 60.0;
 								}
 
-								TransitLine transitLine = schedule.getTransitLines().get(route.getLineId());
-								TransitRoute transitRoute = transitLine.getRoutes().get(route.getRouteId());
-								String transitMode = transitRoute.getTransportMode();
+								String mode = schedule.getTransitLines().get(route.getLineId()).getRoutes()
+										.get(route.getRouteId()).getTransportMode();
 
 								double inVehicleTime = route.getTravelTime().seconds() - waitingTime;
 
-								switch (transitMode) {
+								switch (mode) {
 								case "rail":
 									result.inVehicleTimeRail_min += inVehicleTime / 60.0;
 									result.inVehicleDistanceRail_km += route.getDistance() * 1e-3;
@@ -188,17 +179,6 @@ public class BatchPublicTransportRouter {
 								}
 
 								result.isOnlyWalk = 0;
-
-								if (writeRoute) {
-									RouteInformation partialInformation = new RouteInformation();
-									partialInformation.mode = transitMode;
-									partialInformation.lineId = transitLine.getId().toString();
-									partialInformation.routeId = transitRoute.getId().toString();
-									partialInformation.accessTime = route.getBoardingTime().seconds();
-									partialInformation.egressTime = leg.getDepartureTime().seconds()
-											+ leg.getTravelTime().seconds();
-									routeInformation.add(partialInformation);
-								}
 							} else {
 								throw new IllegalStateException();
 							}
@@ -214,14 +194,6 @@ public class BatchPublicTransportRouter {
 								+ result.transferTravelTime_min;
 						result.totalWalkDistance_km = result.accessDistance_km + result.egressDistance_km
 								+ result.transferDistance_km;
-
-						if (writeRoute) {
-							try {
-								result.route = new ObjectMapper().writeValueAsString(routeInformation);
-							} catch (JsonProcessingException e) {
-								e.printStackTrace();
-							}
-						}
 
 						localResults.add(result);
 					}
@@ -286,19 +258,8 @@ public class BatchPublicTransportRouter {
 
 		public int isOnlyWalk;
 
-		public String route;
-
 		Result(Task task) {
 			this.identifier = task.identifier;
 		}
-	}
-
-	static public class RouteInformation {
-		public String lineId;
-		public String routeId;
-		public String mode;
-
-		public double accessTime;
-		public double egressTime;
 	}
 }

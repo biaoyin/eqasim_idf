@@ -23,8 +23,7 @@ public class RunSimulation {
 				.allowPrefixes("mode-choice-parameter", "cost-parameter") //
 				.build();
 
-		IDFConfigurator configurator = new IDFConfigurator();
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 		//modify some parameters in config file
 		config.controler().setLastIteration(60);
 //		config.strategy().setMaxAgentPlanMemorySize(5);
@@ -34,15 +33,14 @@ public class RunSimulation {
 //		dmcConfig.setEnforceSinglePlan(false);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.overwriteExistingFiles);
         //
-
 		cmd.applyConfiguration(config);
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		configurator.configureScenario(scenario);
+		IDFConfigurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		Controler controller = new Controler(scenario);
-		configurator.configureController(controller);
+		IDFConfigurator.configureController(controller);
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new IDFModeChoiceModule(cmd));
