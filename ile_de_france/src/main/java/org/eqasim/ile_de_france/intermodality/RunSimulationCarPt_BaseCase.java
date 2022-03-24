@@ -37,39 +37,40 @@ import java.util.List;
 public class RunSimulationCarPt_BaseCase {
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/base_case/ile_de_france_config.xml"};
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_2021plus.csv";
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/base_case/ile_de_france_config_adapt.xml"};
+		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train.csv";
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
 				.allowPrefixes("mode-choice-parameter", "cost-parameter") //
 				.build();
-
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
+		IDFConfigurator configurator = new IDFConfigurator();
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(100);
-		config.strategy().setMaxAgentPlanMemorySize(1);// be subject to the setEnforceSinglePlan to ensure vehicle tour constraint
-//		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
+		config.controler().setLastIteration(60);
+/*		config.strategy().setMaxAgentPlanMemorySize(1);// be subject to the setEnforceSinglePlan to ensure vehicle tour constraint
+		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-		dmcConfig.setEnforceSinglePlan(true);
+		dmcConfig.setEnforceSinglePlan(true);*/
+		config.controler().setOutputDirectory("E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/PTCar_BaseCase_rer_train");
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
 		// multistage car trips
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
 		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
 
-		config.vehicles().setVehiclesFile("vehicle_types.xml");
+	/*	config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
-		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);
+		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);*/
 
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
-				ss.setWeight(0.80);
+				ss.setWeight(0.95);
 			}
 			if (ss.getStrategyName().equals("DiscreteModeChoice")) {
-				ss.setWeight(0.20);
+				ss.setWeight(0.05);
 			}
 		}
 
@@ -101,6 +102,8 @@ public class RunSimulationCarPt_BaseCase {
 
 		// DMC config definition
 		// Adding the mode "car_pt" and "pt_car" to CachedModes
+		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
+				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
 		Collection<String> cachedModes = new HashSet<>(dmcConfig.getCachedModes());
 		cachedModes.add("car_pt");
 		cachedModes.add("pt_car");
@@ -114,11 +117,11 @@ public class RunSimulationCarPt_BaseCase {
 
 		cmd.applyConfiguration(config);
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		IDFConfigurator.configureScenario(scenario);
+		configurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		Controler controller = new Controler(scenario);
-		IDFConfigurator.configureController(controller);
+		configurator.configureController(controller);
 
 		//set Park and ride lot locations
 		List<Coord> parkRideCoords;

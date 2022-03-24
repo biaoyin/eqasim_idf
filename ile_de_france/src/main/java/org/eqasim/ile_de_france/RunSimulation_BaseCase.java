@@ -47,32 +47,29 @@ import java.util.Arrays;
 public class RunSimulation_BaseCase {
 
 	static public void main(String[] args) throws ConfigurationException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/base_case/ile_de_france_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/base_case/ile_de_france_config_adapt.xml"};
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
 				.allowPrefixes("mode-choice-parameter", "cost-parameter") //
 				.build();
+		IDFConfigurator configurator = new IDFConfigurator();
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
 		//modify some parameters in config file
 		config.controler().setLastIteration(60);
-		config.strategy().setMaxAgentPlanMemorySize(1);
-//		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
-//		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
-//				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-//		dmcConfig.setEnforceSinglePlan(true);
+		config.controler().setOutputDirectory("E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/reference");
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
-		// multi-stage car trips
+		//add multi-stage car trips
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
 		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
 
 		//////////////////////////////basic strategy setting////////////////////////////
-		config.vehicles().setVehiclesFile("./vehicle_types.xml");
+		/*config.vehicles().setVehiclesFile("./vehicle_types.xml");
 		config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
 		config.qsim().setVehiclesSource(VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
-
+*/
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
 				ss.setWeight(0.95);
@@ -83,17 +80,16 @@ public class RunSimulation_BaseCase {
 		}
 
 		/////////////////////////////////////////////////////////////////
-
 		cmd.applyConfiguration(config);
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		IDFConfigurator.configureScenario(scenario);
+		configurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
-		int originalNumberOfLinks = scenario.getNetwork().getLinks().size();
-		System.out.println (originalNumberOfLinks);
+		/*int originalNumberOfLinks = scenario.getNetwork().getLinks().size();
+		System.out.println (originalNumberOfLinks);*/
 
 		Controler controller = new Controler(scenario);
-		IDFConfigurator.configureController(controller);
+		configurator.configureController(controller);
 		//
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModule());

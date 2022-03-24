@@ -23,8 +23,8 @@ public class RunAdaptConfig_CarInternal {
 
 		args = new String[] {"--input-path", "ile_de_france\\scenarios\\" + scenarioID + "\\base_case\\ile_de_france_config.xml",
 				"--output-path", "ile_de_france\\scenarios\\" + scenarioID +"\\driving_restriction\\ile_de_france_config_carInternal.xml"};
-
-		ConfigAdapter.run(args, IDFConfigurator.getConfigGroups(), RunAdaptConfig_CarInternal::adaptConfiguration);
+		IDFConfigurator configurator = new IDFConfigurator();
+		ConfigAdapter.run(args, configurator.getConfigGroups(), RunAdaptConfig_CarInternal::adaptConfiguration);
 	}
 
 	static public void adaptConfiguration(Config config) {

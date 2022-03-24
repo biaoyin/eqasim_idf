@@ -40,8 +40,8 @@ public class RunSimulation_SRR {
 				.requireOptions("config-path") //
 				.allowPrefixes("mode-choice-parameter", "cost-parameter") //
 				.build();
-
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
+		IDFConfigurator configurator = new IDFConfigurator();
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
 		config.controler().setLastIteration(3);
@@ -106,14 +106,14 @@ public class RunSimulation_SRR {
 		cmd.applyConfiguration(config);
 
 		Scenario scenario = ScenarioUtils.createScenario(config);
-		IDFConfigurator.configureScenario(scenario);
+		configurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		int originalNumberOfLinks = scenario.getNetwork().getLinks().size();
 		System.out.println (originalNumberOfLinks);
 
 		Controler controller = new Controler(scenario);
-		IDFConfigurator.configureController(controller);
+		configurator.configureController(controller);
 		//
 
 		controller.addOverridingModule(new EqasimAnalysisModule());

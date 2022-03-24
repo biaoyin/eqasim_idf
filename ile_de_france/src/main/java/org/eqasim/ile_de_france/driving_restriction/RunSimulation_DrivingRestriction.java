@@ -57,8 +57,8 @@ public class RunSimulation_DrivingRestriction {
 				.requireOptions("config-path") //
 				.allowPrefixes("mode-choice-parameter", "cost-parameter") //
 				.build();
-
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
+		IDFConfigurator configurator = new IDFConfigurator();
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
 		config.controler().setLastIteration(2);
@@ -102,10 +102,10 @@ public class RunSimulation_DrivingRestriction {
 		eqasimConfig_DRZ.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
 		 //
 		cmd.applyConfiguration(config);
-		Scenario scenario = prepareScenario( config );
+		Scenario scenario = prepareScenario( config, configurator );
 		Controler controller = new Controler(scenario);
 
-		IDFConfigurator.configureController(controller);
+		configurator.configureController(controller);
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new IDFModeChoiceModule(cmd));
@@ -175,7 +175,7 @@ public class RunSimulation_DrivingRestriction {
 		controller.run();
 	}
 
-	private static Scenario prepareScenario(Config config) {
+	private static Scenario prepareScenario(Config config, IDFConfigurator configurator) {
 		final Scenario scenario = ScenarioUtils.createScenario( config );
 
 		// Add carInternal vehicle type
@@ -183,7 +183,7 @@ public class RunSimulation_DrivingRestriction {
 		VehicleType carInternalVehicleType = vehiclesFactory.createVehicleType(Id.create("carInternal", VehicleType.class));
 		scenario.getVehicles().addVehicleType(carInternalVehicleType);
 
-		IDFConfigurator.configureScenario(scenario);
+		configurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		// Delete all initial links and routes in the plan

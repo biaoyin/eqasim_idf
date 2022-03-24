@@ -61,8 +61,8 @@ public class RunSimulationCarPt_DrivingRestriction {
 				.requireOptions("config-path") //
 				.allowPrefixes("mode-choice-parameter", "cost-parameter") //
 				.build();
-
-		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), IDFConfigurator.getConfigGroups());
+		IDFConfigurator configurator = new IDFConfigurator();
+		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
 		config.controler().setLastIteration(100);
@@ -144,9 +144,9 @@ public class RunSimulationCarPt_DrivingRestriction {
 		dmcConfig.setTourConstraints(tourConstraints);
 
 		cmd.applyConfiguration(config);
-		Scenario scenario = prepareScenario( config );
+		Scenario scenario = prepareScenario( config, configurator );
 		Controler controller = new Controler(scenario);
-		IDFConfigurator.configureController(controller);
+		configurator.configureController(controller);
 
 		//set Park and ride lot locations
 		List<Coord> parkRideCoords;
@@ -229,7 +229,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		controller.run();
 	}
 
-	private static Scenario prepareScenario(Config config) {
+	private static Scenario prepareScenario(Config config, IDFConfigurator configurator) {
 		final Scenario scenario = ScenarioUtils.createScenario( config );
 
 		// Add carInternal vehicle type
@@ -237,7 +237,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		VehicleType carInternalVehicleType = vehiclesFactory.createVehicleType(Id.create("carInternal", VehicleType.class));
 		scenario.getVehicles().addVehicleType(carInternalVehicleType);
 
-		IDFConfigurator.configureScenario(scenario);
+		configurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);
 
 		// Delete all initial links and routes in the plan
