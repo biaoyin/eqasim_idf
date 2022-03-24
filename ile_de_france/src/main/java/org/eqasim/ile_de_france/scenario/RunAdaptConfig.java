@@ -11,7 +11,11 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 
 public class RunAdaptConfig {
+
+
 	static public void main(String[] args) throws ConfigurationException {
+		args = new String[] {"--input-path", "ile_de_france/scenarios/ile-de-france-1pct/base_case/ile_de_france_config.xml",
+				"--output-path", "ile_de_france/scenarios/ile-de-france-1pct/base_case/ile_de_france_config_adapt.xml"};
 		IDFConfigurator configurator = new IDFConfigurator();
 		ConfigAdapter.run(args, configurator.getConfigGroups(), RunAdaptConfig::adaptConfiguration);
 	}
