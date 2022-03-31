@@ -31,9 +31,14 @@ public class IDFModeAvailabilityCarPt implements ModeAvailability {
 		}
 
 		if (carAvailability) {
-			modes.add(TransportMode.car);
-			modes.add("car_pt");
-			modes.add("pt_car");//To do more define the availability of bike_pt and pt_bike
+			//BYin: After adding special mode "carInternal
+			if ("personInternal".equals((String) person.getAttributes().getAttribute("subpopulation"))) {
+				modes.add("carInternal");
+			} else {
+				modes.add(TransportMode.car);
+				modes.add("car_pt");
+				modes.add("pt_car");
+			}
 		}
 
 		// Check bike availability

@@ -71,19 +71,17 @@ public class IDFModeChoiceModuleCarPt extends AbstractEqasimExtension {
         bindUtilityEstimator(CAR_ESTIMATOR_NAME).to(IDFCarUtilityEstimator.class);
         bindUtilityEstimator(BIKE_ESTIMATOR_NAME).to(IDFBikeUtilityEstimator.class);
 
+
         // Register the estimator
         bindUtilityEstimator(CAR_PT_ESTIMATOR_NAME).to(CarPtUtilityEstimator.class);
         bindUtilityEstimator(PT_CAR_ESTIMATOR_NAME).to(PtCarUtilityEstimator.class);
 
         bind(IDFSpatialPredictor.class);
-
         // Register the predictor
         bind(ParkRideManager.class);
         //bind(CarPtPredictor.class);
         //bind(PtCarPredictor.class);
-
         bind(ModeParameters.class).to(IDFModeParameters.class);
-
         // Constraint register
         bindTourConstraintFactory("IntermodalModesConstraint").to(IntermodalModesConstraint.Factory.class);
 

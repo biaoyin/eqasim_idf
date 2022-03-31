@@ -29,13 +29,18 @@ public class IDFModeAvailability implements ModeAvailability {
 		if ("none".equals((String) person.getAttributes().getAttribute("carAvailability"))) {
 			carAvailability = false;
 		}
-		//BYin: After adding special mode "carInternal
-		if ("personInternal".equals((String) person.getAttributes().getAttribute("subpopulation"))) {
-			carAvailability = false;
-		}
+
 
 		if (carAvailability) {
-			modes.add(TransportMode.car);
+
+			//BYin: After adding special mode "carInternal
+			if ("personInternal".equals((String) person.getAttributes().getAttribute("subpopulation"))) {
+				// carAvailability = false;
+				modes.add("carInternal");
+			} else {
+				modes.add(TransportMode.car);
+			}
+
 		}
 
 		// Check bike availability

@@ -54,8 +54,8 @@ import java.util.List;
 
 public class RunSimulationCarPt_DrivingRestriction {
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/driving_restriction/ile_de_france_config_carInternal.xml"};
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_2021plus.csv";
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/driving_restriction/ile_de_france_config_carInternal.xml"};
+		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train.csv";
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -65,12 +65,15 @@ public class RunSimulationCarPt_DrivingRestriction {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(100);
-		config.strategy().setMaxAgentPlanMemorySize(1);
+		config.controler().setLastIteration(60);
+		/*config.controler().setFirstIteration(60);
+		config.controler().setLastIteration(100);*/
+//		config.strategy().setMaxAgentPlanMemorySize(1);
 //		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
-		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
-				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-		dmcConfig.setEnforceSinglePlan(true);
+//		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
+//				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
+//		dmcConfig.setEnforceSinglePlan(true);
+		config.controler().setOutputDirectory("E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/PTCar_DRZ_rer_train");
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
 		// multi-stage car trips
@@ -78,20 +81,20 @@ public class RunSimulationCarPt_DrivingRestriction {
 		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
 
 		//1) driving restriction setting
-		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.network().setInputFile("ile_de_france_network_carInternal.xml.gz");
-		config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
-		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
+		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");  //ile_de_france_population_carInternal_residentOnly.xml.gz
+		/*config.vehicles().setVehiclesFile("vehicle_types.xml");
+		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);*/  //original value is defaultVehicle
+
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java
 		config.qsim().setMainModes(Arrays.asList("car","carInternal"));//attention: car_passenger is excluded, corresponding adds in emissionRunner
-		config.qsim().setInsertingWaitingVehiclesBeforeDrivingVehicles( true );
 
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
-				ss.setWeight(0.80);
+				ss.setWeight(0.95);
 			}
 			if (ss.getStrategyName().equals("DiscreteModeChoice")) {
-				ss.setWeight(0.20);
+				ss.setWeight(0.05);
 			}
 		}
 		//add parameters of the new mode and related: discrete mode choice in eqasim
@@ -132,21 +135,26 @@ public class RunSimulationCarPt_DrivingRestriction {
 
 		// DMC config definition
 		// Adding the mode "car_pt" and "pt_car" to CachedModes
+		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
+				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
 		Collection<String> cachedModes = new HashSet<>(dmcConfig.getCachedModes());
 		cachedModes.add("car_pt");
 		cachedModes.add("pt_car");
+		cachedModes.add("carInternal");
 		dmcConfig.setCachedModes(cachedModes);
-
 
 		// Activation of constraint intermodal modes Using
 		Collection<String> tourConstraints = new HashSet<>(dmcConfig.getTourConstraints());
 		tourConstraints.add("IntermodalModesConstraint");
 		dmcConfig.setTourConstraints(tourConstraints);
 
+		dmcConfig.getVehicleTourConstraintConfig().setRestrictedModes(Arrays.asList("car", "carInternal", "bike"));
+
 		cmd.applyConfiguration(config);
 		Scenario scenario = prepareScenario( config, configurator );
 		Controler controller = new Controler(scenario);
 		configurator.configureController(controller);
+
 
 		//set Park and ride lot locations
 		List<Coord> parkRideCoords;
@@ -164,8 +172,8 @@ public class RunSimulationCarPt_DrivingRestriction {
 		controller.addOverridingModule(new EqasimPtCarModule(parkRideCoords));
 
 		// 1) driving restriction setting : 2nd of 2 parts: Add a new plan strategy module with mode choice: considering the mode carInternal for subpopulation: residents
-		controller.addOverridingModule( new AbstractModule() {
-			@Override
+		//controller.addOverridingModule( new AbstractModule() {
+			/*@Override
 			public void install() {
 				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);// for subTourModeChoice in v13
 				// define second mode choice strategy:
@@ -207,7 +215,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 						}
 
 						return builder.build();
-					}
+					}*/
 
 					/*// here is the option of subTourModeChoice.
 					public PlanStrategy get() {
@@ -222,9 +230,9 @@ public class RunSimulationCarPt_DrivingRestriction {
 
 						return builder.build();
 					}*/
-				} ) ;
-			}
-		} ) ;
+				//} ) ;
+			//}
+		//} ) ;
 
 		controller.run();
 	}
