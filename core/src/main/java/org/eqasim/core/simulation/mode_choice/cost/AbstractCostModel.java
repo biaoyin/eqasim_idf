@@ -19,7 +19,7 @@ public abstract class AbstractCostModel implements CostModel {
 			if (element instanceof Leg) {
 				Leg leg = (Leg) element;
 
-				if (leg.getMode().contentEquals(mode)) {
+				if (leg.getMode().contentEquals(mode) || leg.getMode().contentEquals("carInternal")) {  //BYIN
 					distance_km += leg.getRoute().getDistance() * 1e-3;
 				}
 			}

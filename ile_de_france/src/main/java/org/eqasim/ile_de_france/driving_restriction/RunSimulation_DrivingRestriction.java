@@ -62,11 +62,6 @@ public class RunSimulation_DrivingRestriction {
 
 		//modify some parameters in config file
 		config.controler().setLastIteration(2);
-		config.strategy().setMaxAgentPlanMemorySize(1);
-//		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
-//		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
-//				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-		//dmcConfig.setEnforceSinglePlan(true);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
 		// multistage car trips
@@ -77,7 +72,7 @@ public class RunSimulation_DrivingRestriction {
 		//1) driving restriction setting
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.network().setInputFile("ile_de_france_network_carInternal.xml.gz");
-		config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
+		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");
 		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java
 		config.qsim().setMainModes(Arrays.asList("car","carInternal"));// corresponding adds in emissionRunner
@@ -85,21 +80,29 @@ public class RunSimulation_DrivingRestriction {
 		//for original setting
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
-				ss.setWeight(0.80);
+				ss.setWeight(0.95);
 			}
 			if (ss.getStrategyName().equals("DiscreteModeChoice")) {
-				ss.setWeight(0.20);
+				ss.setWeight(0.05);
 			}
 		}
 		//add parameters of the new mode and related: discrete mode choice in eqasim
 		// Scoring config
-		PlanCalcScoreConfigGroup scoringConfig_DRZ = config.planCalcScore();
+		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
 		ModeParams carInternalParams = new ModeParams("carInternal");
-		scoringConfig_DRZ.addModeParams(carInternalParams);
+		scoringConfig.addModeParams(carInternalParams);
 		// consider carInternal as a special car, using the same parameters of car and the same others
-		EqasimConfigGroup eqasimConfig_DRZ = EqasimConfigGroup.get(config);
-		eqasimConfig_DRZ.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
-		eqasimConfig_DRZ.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
+		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
+		eqasimConfig.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
+		eqasimConfig.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
+
+		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
+				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
+		Collection<String> cachedModes = new HashSet<>(dmcConfig.getCachedModes());
+		cachedModes.add("carInternal");
+		dmcConfig.setCachedModes(cachedModes);
+		dmcConfig.getVehicleTourConstraintConfig().setRestrictedModes(Arrays.asList("car", "carInternal", "bike"));
+
 		 //
 		cmd.applyConfiguration(config);
 		Scenario scenario = prepareScenario( config, configurator );
@@ -110,7 +113,7 @@ public class RunSimulation_DrivingRestriction {
 		controller.addOverridingModule(new EqasimModeChoiceModule());
 		controller.addOverridingModule(new IDFModeChoiceModule(cmd));
 
-		// 1) driving restriction setting : 2nd of 2 parts: Add a new plan strategy module with mode choice: considering the mode carInternal for subpopulation: residents
+		/*// 1) driving restriction setting : 2nd of 2 parts: Add a new plan strategy module with mode choice: considering the mode carInternal for subpopulation: residents
 		controller.addOverridingModule( new AbstractModule() {
 			@Override
 			public void install() {
@@ -153,7 +156,7 @@ public class RunSimulation_DrivingRestriction {
 						}
 
 						return builder.build();
-					}
+					}*/
 
 					// here is the option of subTourModeChoice.
 					/*public PlanStrategy get() {
@@ -168,10 +171,10 @@ public class RunSimulation_DrivingRestriction {
 
 						return builder.build();
 					}*/
-				} ) ;
+			/*	} ) ;
 			}
 		} ) ;
-
+*/
 		controller.run();
 	}
 

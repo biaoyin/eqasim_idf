@@ -68,11 +68,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		config.controler().setLastIteration(60);
 		/*config.controler().setFirstIteration(60);
 		config.controler().setLastIteration(100);*/
-//		config.strategy().setMaxAgentPlanMemorySize(1);
-//		config.strategy().setPlanSelectorForRemoval("ChangeExpBetaForRemoval");
-//		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
-//				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-//		dmcConfig.setEnforceSinglePlan(true);
+
 		config.controler().setOutputDirectory("E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/PTCar_DRZ_rer_train");
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
@@ -99,21 +95,21 @@ public class RunSimulationCarPt_DrivingRestriction {
 		}
 		//add parameters of the new mode and related: discrete mode choice in eqasim
 		// Scoring config
-		PlanCalcScoreConfigGroup scoringConfig_DRZ = config.planCalcScore();
+		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
 		ModeParams carInternalParams = new ModeParams("carInternal");
-		scoringConfig_DRZ.addModeParams(carInternalParams);
+		scoringConfig.addModeParams(carInternalParams);
+
 		// consider carInternal as a special car, using the same parameters of car and the same others
-		EqasimConfigGroup eqasimConfig_DRZ = EqasimConfigGroup.get(config);
-		eqasimConfig_DRZ.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
-		eqasimConfig_DRZ.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
+		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
+		eqasimConfig.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
+		eqasimConfig.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
 
 		// Eqasim config definition to add the mode car_pt estimation
-		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
 		eqasimConfig.setEstimator("car_pt", "CarPtUtilityEstimator");
 		eqasimConfig.setEstimator("pt_car", "PtCarUtilityEstimator");
 
 		// Scoring config definition to add the mode car_pt parameters
-		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
+		//PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
 		ModeParams carPtParams = new ModeParams("car_pt");
 		ModeParams ptCarParams = new ModeParams("pt_car");
 		scoringConfig.addModeParams(carPtParams);
@@ -170,69 +166,6 @@ public class RunSimulationCarPt_DrivingRestriction {
 		controller.addOverridingModule(new IDFModeChoiceModuleCarPt(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));
 		controller.addOverridingModule(new EqasimCarPtModule(parkRideCoords));
 		controller.addOverridingModule(new EqasimPtCarModule(parkRideCoords));
-
-		// 1) driving restriction setting : 2nd of 2 parts: Add a new plan strategy module with mode choice: considering the mode carInternal for subpopulation: residents
-		//controller.addOverridingModule( new AbstractModule() {
-			/*@Override
-			public void install() {
-				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);// for subTourModeChoice in v13
-				// define second mode choice strategy:
-				this.addPlanStrategyBinding("DiscreteModeChoice").toProvider(new Provider<PlanStrategy>(){
-//				this.addPlanStrategyBinding("SubtourModeChoiceInternal").toProvider(new Provider<PlanStrategy>(){
-					@Inject
-					private GlobalConfigGroup globalConfigGroup;
-					@Inject
-					private Provider<TripRouter> tripRouterProvider;
-					@Inject
-					private ActivityFacilities activityFacilities;
-					@Inject
-					private Provider<DiscreteModeChoiceModel> modeChoiceModelProvider;
-					@Inject
-					private Provider<TripListConverter> tripListConverterProvider;
-					@Inject
-					private PopulationFactory populationFactory;
-					@Inject
-					private PermissibleModesCalculator permissibleModesCalculator;
-
-					@Override  //here is the option of discrete mode choice
-					public PlanStrategy get() {
-
-						DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
-								.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
-						dmcConfig.setEnforceSinglePlan(true);
-						Collection<String> cachedModes = new HashSet<>(dmcConfig.getCachedModes());
-						cachedModes.add("carInternal");
-						dmcConfig.setCachedModes(cachedModes);
-						dmcConfig.getVehicleTourConstraintConfig().setRestrictedModes(Arrays.asList("car", "carInternal", "bike"));
-
-						PlanStrategyImpl.Builder builder = new PlanStrategyImpl.Builder(new RandomPlanSelector<>());
-						builder.addStrategyModule(new DiscreteModeChoiceReplanningModule(globalConfigGroup, modeChoiceModelProvider,
-								tripListConverterProvider, populationFactory));
-						if (dmcConfig.getPerformReroute()) {
-							builder.addStrategyModule(new ReRoute(activityFacilities, tripRouterProvider, globalConfigGroup));
-						} else {
-							builder.addStrategyModule(new CheckConsistentRoutingReplanningModule(globalConfigGroup));
-						}
-
-						return builder.build();
-					}*/
-
-					/*// here is the option of subTourModeChoice.
-					public PlanStrategy get() {
-
-						SubtourModeChoiceConfigGroup modeChoiceConfig = new SubtourModeChoiceConfigGroup() ;
-						modeChoiceConfig.setModes( new String[] {TransportMode.walk, TransportMode.pt,"carInternal","car_passenger","bike"} );
-						modeChoiceConfig.setChainBasedModes( new String[] {"carInternal","bike"});
-
-						PlanStrategyImpl.Builder builder = new PlanStrategyImpl.Builder(new RandomPlanSelector<>());
-						builder.addStrategyModule(new SubtourModeChoice(globalConfigGroup, modeChoiceConfig, permissibleModesCalculator));
-						builder.addStrategyModule(new ReRoute(activityFacilities, tripRouterProvider, globalConfigGroup));
-
-						return builder.build();
-					}*/
-				//} ) ;
-			//}
-		//} ) ;
 
 		controller.run();
 	}
