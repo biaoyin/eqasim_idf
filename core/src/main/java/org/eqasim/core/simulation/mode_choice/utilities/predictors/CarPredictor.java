@@ -58,8 +58,8 @@ public class CarPredictor extends CachedVariablePredictor<CarVariables> {
 						case "carInternal":
 						case TransportMode.car:
 							travelTime_min += leg.getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
-							cost_MU += costModel.calculateCost_MU(person, trip, elements);
-							euclideanDistance_km += PredictorUtils.calculateEuclideanDistance_km(trip);
+							cost_MU = costModel.calculateCost_MU(person, trip, elements);  //no need to add += due to trip is considered
+							euclideanDistance_km = PredictorUtils.calculateEuclideanDistance_km(trip);
 							break;
 						default:
 							throw new IllegalStateException("Unknown mode in car trip: " + leg.getMode());

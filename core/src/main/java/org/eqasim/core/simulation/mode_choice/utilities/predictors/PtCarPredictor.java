@@ -41,7 +41,6 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
         this.carCostModel = carCostModel;
         this.ptCostModel = ptCostModel;
         this.parameters = parameters;
-        //this.parkRideCoords = parkRideCoords;
         this.network = network;
         this.carRoutingModule = carRoutingModule;
         this.ptRoutingModule = ptRoutingModule;
@@ -121,7 +120,7 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
         int numberOfLineSwitches = Math.max(0, numberOfVehicularTrips - 1);
 
         // Calculate cost
-        double cost_MU_pt = carCostModel.calculateCost_MU(person, trip_pt, ptElements);
+        double cost_MU_pt = ptCostModel.calculateCost_MU(person, trip_pt, ptElements);
         double euclideanDistance_km_pt = PredictorUtils.calculateEuclideanDistance_km(trip_pt);
 
         double timeToAccessCar = 5;
@@ -143,7 +142,7 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
                     case "carInternal":
                     case TransportMode.car:
                         vehicleTravelTime += leg.getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
-                        cost_MU_car += ptCostModel.calculateCost_MU(person, trip_car, carElements);
+                        cost_MU_car = carCostModel.calculateCost_MU(person, trip_car, carElements);
                         euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
                         break;
                     default:
