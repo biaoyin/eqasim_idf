@@ -44,10 +44,7 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehiclesFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class RunSimulation_DrivingRestriction {
 	static public void main(String[] args) throws ConfigurationException, IOException {
@@ -76,6 +73,10 @@ public class RunSimulation_DrivingRestriction {
 		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java
 		config.qsim().setMainModes(Arrays.asList("car","carInternal"));// corresponding adds in emissionRunner
+
+		Set<String> analyzedModes = new HashSet<> (config.travelTimeCalculator().getAnalyzedModes());
+		analyzedModes.add("carInternal");
+		config.travelTimeCalculator().setAnalyzedModes(analyzedModes);
 
 		//for original setting
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {

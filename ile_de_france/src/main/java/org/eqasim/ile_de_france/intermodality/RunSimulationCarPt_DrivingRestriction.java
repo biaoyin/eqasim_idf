@@ -47,12 +47,11 @@ import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehiclesFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class RunSimulationCarPt_DrivingRestriction {
+	static String outputPath = "E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/PTCar_DRZ_rer_train";
+
 	static public void main(String[] args) throws ConfigurationException, IOException {
 		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/driving_restriction/ile_de_france_config_carInternal.xml"};
 		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train.csv";
@@ -69,7 +68,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		/*config.controler().setFirstIteration(60);
 		config.controler().setLastIteration(100);*/
 
-		config.controler().setOutputDirectory("E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/PTCar_DRZ_rer_train");
+		config.controler().setOutputDirectory(outputPath);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
 		// multi-stage car trips
@@ -79,11 +78,15 @@ public class RunSimulationCarPt_DrivingRestriction {
 		//1) driving restriction setting
 		config.network().setInputFile("ile_de_france_network_carInternal.xml.gz");
 		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");  //ile_de_france_population_carInternal_residentOnly.xml.gz
-		/*config.vehicles().setVehiclesFile("vehicle_types.xml");
-		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);*/  //original value is defaultVehicle
-
+		config.vehicles().setVehiclesFile("vehicle_types.xml");
+		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java
 		config.qsim().setMainModes(Arrays.asList("car","carInternal"));//attention: car_passenger is excluded, corresponding adds in emissionRunner
+
+		// add carInternal to traveltimeCalculator
+		Set<String> analyzedModes = new HashSet<> (config.travelTimeCalculator().getAnalyzedModes());
+		analyzedModes.add("carInternal");
+		config.travelTimeCalculator().setAnalyzedModes(analyzedModes);
 
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
