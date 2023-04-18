@@ -8,6 +8,7 @@ import org.eqasim.core.components.car_pt.routing.EqasimPtCarModule;
 import org.eqasim.core.components.config.EqasimConfigGroup;
 import org.eqasim.core.simulation.analysis.EqasimAnalysisModule;
 import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModuleCarPt;
+import org.eqasim.core.tools.TestCarPtPara;
 import org.eqasim.ile_de_france.IDFConfigurator;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModule;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPt;
@@ -50,11 +51,15 @@ import java.io.IOException;
 import java.util.*;
 
 public class RunSimulationCarPt_DrivingRestriction {
-	static String outputPath = "E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/PTCar_DRZ_rer_train";
+	static String outputPath = "E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-5pct/PTCar_DRZ_paris_4arr_rer_train_";
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/driving_restriction/ile_de_france_config_carInternal.xml"};
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train.csv";
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/driving_restriction_paris_4arr/ile_de_france_config_carInternal.xml"};
+		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train_outside_paris.csv";
+
+		double car_pt_constant = 0.75;
+		TestCarPtPara tp = new TestCarPtPara();
+		tp.setPara(car_pt_constant);
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -64,11 +69,11 @@ public class RunSimulationCarPt_DrivingRestriction {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(60);
+		config.controler().setLastIteration(100);
 		/*config.controler().setFirstIteration(60);
 		config.controler().setLastIteration(100);*/
 
-		config.controler().setOutputDirectory(outputPath);
+		config.controler().setOutputDirectory(outputPath +  car_pt_constant);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
 		// multi-stage car trips
@@ -100,6 +105,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		// Scoring config
 		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
 		ModeParams carInternalParams = new ModeParams("carInternal");
+		carInternalParams.setMarginalUtilityOfTraveling(-1.0);
 		scoringConfig.addModeParams(carInternalParams);
 
 		// consider carInternal as a special car, using the same parameters of car and the same others
