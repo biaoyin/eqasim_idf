@@ -5,6 +5,7 @@ import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
 import org.eqasim.core.simulation.mode_choice.utilities.UtilityEstimator;
 import org.eqasim.core.simulation.mode_choice.utilities.predictors.PtCarPredictor;
 import org.eqasim.core.simulation.mode_choice.utilities.variables.PtCarVariables;
+import org.eqasim.core.tools.TestCarPtPara;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.contribs.discrete_mode_choice.model.DiscreteModeChoiceTrip;
@@ -15,7 +16,7 @@ public class PtCarUtilityEstimator implements UtilityEstimator {
     private final ModeParameters parameters;
     private final PtCarPredictor ptCarPredictor;
     // private final PersonPredictor personPredictor;
-
+    private final double car_pt_constant = TestCarPtPara.getPara();
     @Inject
     public PtCarUtilityEstimator(ModeParameters parameters,
                                  PtCarPredictor ptCarPredictor) {
@@ -26,7 +27,8 @@ public class PtCarUtilityEstimator implements UtilityEstimator {
 
     protected double estimateConstantUtility() {
         //return parameters.car.alpha_u + parameters.pt.alpha_u;
-        return 1.25;
+        //return 1.25;
+        return car_pt_constant;
 
     }
 
@@ -35,8 +37,14 @@ public class PtCarUtilityEstimator implements UtilityEstimator {
     }
 
     protected double estimateAccessEgressTimeUtility(PtCarVariables variables) {
-        return parameters.walk.betaTravelTime_u_min * variables.accessEgressTime_min_car
+        double thetaWalkThreshold = 20.0;
+        double penaltyWalk = 0.0;
+        penaltyWalk = Math.exp(Math.log(101) * variables.accessEgressTime_min_car/thetaWalkThreshold) - 1;
+        return parameters.walk.betaAccessEgressTravelTime_u_min * variables.accessEgressTime_min_car - penaltyWalk
                 + parameters.pt.betaAccessEgressTime_u_min * variables.accessEgressTime_min_pt;
+
+        /*return parameters.walk.betaTravelTime_u_min * variables.accessEgressTime_min_car
+                + parameters.pt.betaAccessEgressTime_u_min * variables.accessEgressTime_min_pt;*/
     }
 
     protected double estimateInVehicleTimeUtility(PtCarVariables variables) {

@@ -31,7 +31,11 @@ public class CarUtilityEstimator implements UtilityEstimator {
 	}
 
 	protected double estimateAccessEgressTimeUtility(CarVariables variables) {
-		return parameters.walk.betaTravelTime_u_min * variables.accessEgressTime_min;
+		double thetaWalkThreshold = 20.0;
+		double penaltyWalk = 0.0;
+		penaltyWalk = Math.exp(Math.log(101) * variables.accessEgressTime_min/thetaWalkThreshold) - 1; // BYIN
+		//return parameters.walk.betaTravelTime_u_min * variables.accessEgressTime_min; // reference_0
+		return parameters.walk.betaAccessEgressTravelTime_u_min * variables.accessEgressTime_min - penaltyWalk;
 	}
 
 	protected double estimateMonetaryCostUtility(CarVariables variables) {

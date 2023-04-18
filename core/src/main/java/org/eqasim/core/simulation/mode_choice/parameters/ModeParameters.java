@@ -28,6 +28,7 @@ public class ModeParameters implements ParameterDefinition {
 	public class WalkParameters {
 		public double alpha_u = 0.0;
 		public double betaTravelTime_u_min = 0.0;
+		public double betaAccessEgressTravelTime_u_min = 0.0;
 	}
 
 /*	public class BikePtParameters {  // actually this is not used or assigned for utility function.  Biao

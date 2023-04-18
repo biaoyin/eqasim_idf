@@ -50,6 +50,7 @@ public class IDFModeParameters extends ModeParameters {
 		// Walk
 		parameters.walk.alpha_u = 1.43;
 		parameters.walk.betaTravelTime_u_min = -0.15;
+		parameters.walk.betaAccessEgressTravelTime_u_min = -0.35;  //BYIN: calibration
 
 		return parameters;
 	}

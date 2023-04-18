@@ -2,6 +2,7 @@ package org.eqasim.core.analysis;
 
 import com.google.inject.Singleton;
 import org.eqasim.core.components.ParkRideManager;
+import org.eqasim.core.tools.TestCarPtPara;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.ActivityStartEvent;
@@ -42,6 +43,7 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
     private final List<Coord> parkRideCoords = ParkRideManager.getCoordinates();
     private final Network network = ParkRideManager.getNetwork();
 
+    private  final double car_pt_constant = TestCarPtPara.getPara();
 
     @Override
     public void handleEvent(ActivityStartEvent event) {
@@ -197,7 +199,7 @@ public class CarPtEventHandler implements ActivityStartEventHandler{
 
 
 
-        File outputFile = new File("simulation_output\\intermodalCount" + iteration + ".csv");
+        File outputFile = new File("E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-5pct/PTCar_DRZ_paris_4arr_rer_train_" + car_pt_constant +"/intermodalCount" + iteration + ".csv");
         try {
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile)));
 
