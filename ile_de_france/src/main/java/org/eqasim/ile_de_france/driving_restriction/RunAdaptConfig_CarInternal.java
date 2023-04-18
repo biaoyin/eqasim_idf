@@ -9,6 +9,7 @@ import org.matsim.contribs.discrete_mode_choice.modules.DiscreteModeChoiceModule
 import org.matsim.contribs.discrete_mode_choice.modules.config.DiscreteModeChoiceConfigGroup;
 import org.matsim.core.config.CommandLine.ConfigurationException;
 import org.matsim.core.config.Config;
+import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup.StrategySettings;
@@ -17,12 +18,12 @@ import java.util.Arrays;
 
 public class RunAdaptConfig_CarInternal {
     // set input-path and output-path
-	private static final String scenarioID = "ile-de-france-1pm";
+	private static final String scenarioID = "ile-de-france-5pct";
 
 	static public void main(String[] args) throws ConfigurationException {
 
-		args = new String[] {"--input-path", "ile_de_france\\scenarios\\" + scenarioID + "\\base_case\\ile_de_france_config.xml",
-				"--output-path", "ile_de_france\\scenarios\\" + scenarioID +"\\driving_restriction\\ile_de_france_config_carInternal.xml"};
+		args = new String[] {"--input-path", "ile_de_france\\scenarios\\" + scenarioID + "\\base_case\\ile_de_france_config_adapt.xml",
+				"--output-path", "ile_de_france\\scenarios\\" + scenarioID +"\\driving_restriction_paris_4arr\\ile_de_france_config_carInternal.xml"};
 		IDFConfigurator configurator = new IDFConfigurator();
 		ConfigAdapter.run(args, configurator.getConfigGroups(), RunAdaptConfig_CarInternal::adaptConfiguration);
 	}
@@ -73,7 +74,7 @@ public class RunAdaptConfig_CarInternal {
 		strategyConfig.addStrategySettings(strategySettings_mode_int);
 		strategyConfig.addStrategySettings(strategySettings_mode_int2);
 		//and others
-		strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
+		//strategyConfig.setFractionOfIterationsToDisableInnovation(0.8);
 
 		DiscreteModeChoiceConfigGroup dmcConfig = (DiscreteModeChoiceConfigGroup) config.getModules()
 				.get(DiscreteModeChoiceConfigGroup.GROUP_NAME);
@@ -81,7 +82,9 @@ public class RunAdaptConfig_CarInternal {
 
 		//BYIN: we consider mode choice strategy without sizeofMemories = 1
 //		dmcConfig.setEnforceSinglePlan(false);
-//
+		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
+		scoringConfig.setMarginalUtlOfWaitingPt_utils_hr(-1.0);
+
 		// Calibration results for 5%
 		if (eqasimConfig.getSampleSize() == 0.05) {
 			// Adjust flow and storage capacity
