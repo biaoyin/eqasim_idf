@@ -69,7 +69,7 @@ public class CarPtRoutingModule implements RoutingModule{
                 switch (leg.getMode()) {
                     case TransportMode.walk:
                         if (flag_walk_time_const == true) {
-                            vehicleTravelTime += 4.0*60; // see default setting in ModeParameters: constantAccessEgressWalkTime_min
+                            vehicleTravelTime += 4.0*60; // see default setting in ModeParameters: constantAccessEgressWalkTime_min, may be devided by 2?
                         } else{
                             vehicleTravelTime += leg.getRoute().getTravelTime().seconds(); //
                         }
