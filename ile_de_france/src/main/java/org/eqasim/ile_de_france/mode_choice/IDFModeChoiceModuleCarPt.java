@@ -70,9 +70,7 @@ public class IDFModeChoiceModuleCarPt extends AbstractEqasimExtension {
         bindCostModel(PT_COST_MODEL_NAME).to(IDFPtCostModel.class);
 
         //base case
-        /*bindUtilityEstimator(CAR_ESTIMATOR_NAME).to(IDFCarUtilityEstimator.class);*/
-        //road pricing case: BYIN 2023-04-28
-        bindUtilityEstimator(CAR_ESTIMATOR_NAME).to(IDFCarUtilityEstimatorWithRoadPricing.class);
+        bindUtilityEstimator(CAR_ESTIMATOR_NAME).to(IDFCarUtilityEstimator.class);
         bindUtilityEstimator(BIKE_ESTIMATOR_NAME).to(IDFBikeUtilityEstimator.class);
 
         // Register the predictor

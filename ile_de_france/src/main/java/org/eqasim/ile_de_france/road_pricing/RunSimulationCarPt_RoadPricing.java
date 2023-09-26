@@ -9,6 +9,7 @@ import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModuleCarPt;
 import org.eqasim.core.tools.TestCarPtPara;
 import org.eqasim.ile_de_france.IDFConfigurator;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPt;
+import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPtRoadPricing;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleRoadPricing;
 import org.eqasim.ile_de_france.mode_choice.parameters.TestTollFee;
 import org.matsim.api.core.v01.Coord;
@@ -144,7 +145,7 @@ public class RunSimulationCarPt_RoadPricing {
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModuleCarPt());
 		controller.addOverridingModule(new IDFModeChoiceModuleRoadPricing(cmd, scenario.getPopulation().getFactory()));
-		controller.addOverridingModule(new IDFModeChoiceModuleCarPt(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));
+		controller.addOverridingModule(new IDFModeChoiceModuleCarPtRoadPricing(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));
 		controller.addOverridingModule(new EqasimCarPtModule(parkRideCoords));
 		controller.addOverridingModule(new EqasimPtCarModule(parkRideCoords));
 
