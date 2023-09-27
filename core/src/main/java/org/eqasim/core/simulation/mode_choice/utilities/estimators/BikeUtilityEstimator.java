@@ -47,7 +47,7 @@ public class BikeUtilityEstimator implements UtilityEstimator {
 		double utility = 0.0;
 
 		utility += estimateConstantUtility();
-		utility += estimateTravelTimeUtility(bikeVariables);
+		utility += estimateTravelTimeUtility(bikeVariables) * Math.exp(parameters.lambda_time * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
 		utility += estimateAgeOver18Utility(personVariables);
 
 		return utility;

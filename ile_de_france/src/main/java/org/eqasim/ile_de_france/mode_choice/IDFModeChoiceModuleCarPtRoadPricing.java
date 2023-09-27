@@ -73,6 +73,9 @@ public class IDFModeChoiceModuleCarPtRoadPricing extends AbstractEqasimExtension
         // Register the predictor
         bind(ParkRideManager.class);
         // Register the estimator
+
+        //For car_pt (or pt_car) trip, we made two assumptions to simplify the settings. 1) there is not "IDFCarPtUtilityEstimator" as car legs only happen in suburban (estimateUrbanUtility is 0) ; 2) there is no IDFCarPtUtilityEstimatorWithRoadPricing as the same reason regarding the tolled area.
+        // For generality, we can add these two files for car_pt mode.
         bindUtilityEstimator(CAR_PT_ESTIMATOR_NAME).to(CarPtUtilityEstimator.class);
         bindUtilityEstimator(PT_CAR_ESTIMATOR_NAME).to(PtCarUtilityEstimator.class);
 

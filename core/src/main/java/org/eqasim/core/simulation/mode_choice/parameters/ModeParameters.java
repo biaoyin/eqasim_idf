@@ -54,4 +54,9 @@ public class ModeParameters implements ParameterDefinition {
 
 /*	public final BikePtParameters bike_pt = new BikePtParameters();
 	public final PtBikeParameters pt_bike = new PtBikeParameters();*/
+
+	//DMC with income: BYIN 2023-10
+	public double referenceHouseholdIncome = 0.0;
+	public double lambda_time = 0.0;
+	public double lambda_cost = 0.0;
 }

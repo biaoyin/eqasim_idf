@@ -3,7 +3,9 @@ package org.eqasim.core.simulation.mode_choice.utilities.estimators;
 import com.google.inject.Inject;
 import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
 import org.eqasim.core.simulation.mode_choice.utilities.UtilityEstimator;
+import org.eqasim.core.simulation.mode_choice.utilities.predictors.PersonPredictor;
 import org.eqasim.core.simulation.mode_choice.utilities.predictors.PtCarPredictor;
+import org.eqasim.core.simulation.mode_choice.utilities.variables.PersonVariables;
 import org.eqasim.core.simulation.mode_choice.utilities.variables.PtCarVariables;
 import org.eqasim.core.tools.TestCarPtPara;
 import org.matsim.api.core.v01.population.Person;
@@ -15,14 +17,15 @@ import java.util.List;
 public class PtCarUtilityEstimator implements UtilityEstimator {
     private final ModeParameters parameters;
     private final PtCarPredictor ptCarPredictor;
-    // private final PersonPredictor personPredictor;
+    private final PersonPredictor personPredictor;
+
     private final double car_pt_constant = TestCarPtPara.getPara();
     @Inject
     public PtCarUtilityEstimator(ModeParameters parameters,
-                                 PtCarPredictor ptCarPredictor) {
+                                 PtCarPredictor ptCarPredictor, PersonPredictor personPredictor) {
         this.parameters = parameters;
         this.ptCarPredictor = ptCarPredictor;
-        // this.personPredictor = personPredictor;
+        this.personPredictor = personPredictor;
     }
 
     protected double estimateConstantUtility() {
@@ -73,19 +76,20 @@ public class PtCarUtilityEstimator implements UtilityEstimator {
     @Override
     public double estimateUtility(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
         PtCarVariables variables = ptCarPredictor.predictVariables(person, trip, elements);
-
-         //double utility = 1000000.0;
+        PersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);
 
         double utility = 0.0;
+        double coefficient_time_income = Math.exp(parameters.lambda_time * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
+        double coefficient_cost_income = Math.exp(parameters.lambda_cost * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
 
         utility += estimateConstantUtility();
-        utility += estimateTravelTimeUtility(variables);
-        utility += estimateAccessEgressTimeUtility(variables);
-        utility += estimateInVehicleTimeUtility(variables);
-        utility += estimateWaitingTimeUtility(variables);
-        utility += estimateLineSwitchUtility(variables);
-        utility += estimateMonetaryCostUtility(variables);
+        utility += estimateTravelTimeUtility(variables) * coefficient_time_income;
+        utility += estimateAccessEgressTimeUtility(variables) * coefficient_time_income;
 
+        utility += estimateInVehicleTimeUtility(variables)* coefficient_time_income;
+        utility += estimateWaitingTimeUtility(variables)* coefficient_time_income;
+        utility += estimateLineSwitchUtility(variables);
+        utility += estimateMonetaryCostUtility(variables)*coefficient_cost_income;
 
 
         return utility;

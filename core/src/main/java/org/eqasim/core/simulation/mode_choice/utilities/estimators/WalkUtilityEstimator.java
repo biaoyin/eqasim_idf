@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
 import org.eqasim.core.simulation.mode_choice.utilities.UtilityEstimator;
+import org.eqasim.core.simulation.mode_choice.utilities.predictors.PersonPredictor;
 import org.eqasim.core.simulation.mode_choice.utilities.predictors.WalkPredictor;
+import org.eqasim.core.simulation.mode_choice.utilities.variables.PersonVariables;
 import org.eqasim.core.simulation.mode_choice.utilities.variables.WalkVariables;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.PlanElement;
@@ -15,11 +17,13 @@ import com.google.inject.Inject;
 public class WalkUtilityEstimator implements UtilityEstimator {
 	private final ModeParameters parameters;
 	private final WalkPredictor predictor;
+	private final PersonPredictor personPredictor;
 
 	@Inject
-	public WalkUtilityEstimator(ModeParameters parameters, WalkPredictor predictor) {
+	public WalkUtilityEstimator(ModeParameters parameters, WalkPredictor predictor, PersonPredictor personPredictor) {
 		this.parameters = parameters;
 		this.predictor = predictor;
+		this.personPredictor = personPredictor;
 	}
 
 	protected double estimateConstantUtility() {
@@ -33,11 +37,11 @@ public class WalkUtilityEstimator implements UtilityEstimator {
 	@Override
 	public double estimateUtility(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
 		WalkVariables variables = predictor.predictVariables(person, trip, elements);
-
+		PersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);
 		double utility = 0.0;
 
 		utility += estimateConstantUtility();
-		utility += estimateTravelTimeUtility(variables);
+		utility += estimateTravelTimeUtility(variables) * Math.exp(parameters.lambda_time * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
 
 		return utility;
 	}
