@@ -33,6 +33,8 @@ public class IDFModeParameters extends ModeParameters {
 		parameters.idfCar.betaInsideUrbanArea = -0.5;
 		parameters.idfCar.betaCrossingUrbanArea = -1.0;
 
+		parameters.walk.betaAccessEgressTravelTime_u_min = -0.35;  //BYIN
+
 		// PT
 		parameters.pt.alpha_u = 0.0;
 		parameters.pt.betaLineSwitch_u = -0.17;
@@ -51,6 +53,11 @@ public class IDFModeParameters extends ModeParameters {
 		parameters.walk.alpha_u = 1.43;
 		parameters.walk.betaTravelTime_u_min = -0.15;
 		parameters.walk.betaAccessEgressTravelTime_u_min = -0.35;  //BYIN: calibration
+
+		//DMC with income: BYIN 2023-10
+		parameters.referenceHouseholdIncome = 2000.0;
+		parameters.lambda_time = 0.05;
+		parameters.lambda_cost = -0.30;
 
 		return parameters;
 	}
