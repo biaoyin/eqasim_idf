@@ -43,7 +43,7 @@ public class EqasimModeChoiceModule extends AbstractEqasimExtension {
 
 	public static final String TOUR_LENGTH_FILTER_NAME = "TourLengthFilter";
 	public static final String OUTSIDE_FILTER_NAME = "OutsideFilter";
-	public static final String ODEFAULT_TRIP_FILTER_NAME = "DefaultTripFilter";
+
 	public static final String UTILITY_ESTIMATOR_NAME = "EqasimUtilityEstimator";
 
 	public static final String CAR_ESTIMATOR_NAME = "CarUtilityEstimator";
@@ -64,7 +64,6 @@ public class EqasimModeChoiceModule extends AbstractEqasimExtension {
 
 		bindTourFilter(TOUR_LENGTH_FILTER_NAME).to(TourLengthFilter.class);
 		bindTourFilter(OUTSIDE_FILTER_NAME).to(OutsideFilter.class);
-		bindTripFilter(ODEFAULT_TRIP_FILTER_NAME).to(DefaultTripFilter.class);
 
 		bindTripEstimator(UTILITY_ESTIMATOR_NAME).to(ModalUtilityEstimator.class);
 
