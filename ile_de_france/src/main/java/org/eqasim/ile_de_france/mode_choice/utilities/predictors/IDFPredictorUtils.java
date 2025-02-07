@@ -2,6 +2,7 @@ package org.eqasim.ile_de_france.mode_choice.utilities.predictors;
 
 import org.matsim.api.core.v01.population.Activity;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.core.population.PersonUtils;
 
 public class IDFPredictorUtils {
@@ -20,7 +21,18 @@ public class IDFPredictorUtils {
 	}
 
 	static public boolean isParisResident(Person person) {
-		Boolean isResident = (Boolean) person.getAttributes().getAttribute("isUrban"); //BYIn isParis == isUrban
-		return isResident != null && isResident;
+		// BYIN 2025-01
+		for (PlanElement element : person.getSelectedPlan().getPlanElements()) {
+			if (element instanceof Activity) {
+				Activity activity = (Activity) element;
+				if (activity.getType().equals("home")) {
+					Boolean isResident = (Boolean) activity.getAttributes().getAttribute("isUrban");
+					return isResident != null && isResident;
+				}
+			}
+		}
+		return false;
+		//Boolean isResident = (Boolean) person.getAttributes().getAttribute("isUrban"); //BYIn isParis == isUrban
+		// return isResident != null && isResident;
 	}
 }
