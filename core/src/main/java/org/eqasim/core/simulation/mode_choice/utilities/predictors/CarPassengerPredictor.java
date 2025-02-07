@@ -56,7 +56,7 @@ public class CarPassengerPredictor extends CachedVariablePredictor<CarPassengerV
 							break;
 						case "car_passenger":
 							travelTime_min += leg.getTravelTime().seconds() / 60.0;
-							euclideanDistance_km = PredictorUtils.calculateEuclideanDistance_km(trip);
+
 							break;
 						default:
 							throw new IllegalStateException("Unknown mode in passenger trip: " + leg.getMode());
@@ -64,6 +64,7 @@ public class CarPassengerPredictor extends CachedVariablePredictor<CarPassengerV
 				}
 			}
 		}
+		euclideanDistance_km = PredictorUtils.calculateEuclideanDistance_km(trip);
 		trip_commuting = PredictorUtils.getCommutingTripPurpose(trip);
 		if (trip_commuting == 1) {
 			trip_others = 0;

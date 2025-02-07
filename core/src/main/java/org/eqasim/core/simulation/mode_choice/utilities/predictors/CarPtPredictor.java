@@ -83,14 +83,14 @@ public class CarPtPredictor extends CachedVariablePredictor<CarPtVariables>{
                         break;
                     case "carInternal":
                     case TransportMode.car:
-                        vehicleTravelTime += leg.getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
+                        vehicleTravelTime += leg.getTravelTime().seconds() / 60.0 ;
                         break;
                     default:
                         throw new IllegalStateException("Unknown mode in car trip: " + leg.getMode());
                 }
             }
         }
-
+        vehicleTravelTime += parameters.car.constantParkingSearchPenalty_min;
         // We take 5 min to park the car and access to PT (transfer time)
         double parkingTimeToAccessPt = parameters.car_pt.parkingTimeToAccessPt;
         vehicleTravelTime += parkingTimeToAccessPt;

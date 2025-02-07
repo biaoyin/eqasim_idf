@@ -40,7 +40,7 @@ public class CarUtilityEstimator implements UtilityEstimator {
 	// BYIN 2025-01: add accessEgressTime to in_vehicle_time, instead of usinge stimateAccessEgressTimeUtility.
 	protected double estimateTravelTimeUtility(CarVariables variables) {
 		return variables.trip_commuting * parameters.car.betaTravelTime_u_min_commuting * (variables.travelTime_min + variables.accessEgressTime_min) +
-				variables.trip_others * parameters.car.betaTravelTime_u_min_others * variables.travelTime_min + variables.accessEgressTime_min;
+				variables.trip_others * parameters.car.betaTravelTime_u_min_others * (variables.travelTime_min + variables.accessEgressTime_min);
 	}
 
 //	protected double estimateAccessEgressTimeUtility(CarVariables variables) {

@@ -132,8 +132,6 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
         double vehicleTravelTime = 0.0;
         double accessEgressTime_min_car = 0.0;
         vehicleTravelTime += timeToAccessCar;
-        DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(car_pt, trip.getDestinationActivity(), "car",
-                carElements, person.hashCode(), carElements.get(0).hashCode(), 1000, new AttributesImpl());
 
         for (PlanElement element : carElements) {
             if (element instanceof Leg) {
@@ -144,15 +142,19 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
                         break;
                     case "carInternal":
                     case TransportMode.car:
-                        vehicleTravelTime += leg.getTravelTime().seconds() / 60.0 + parameters.car.constantParkingSearchPenalty_min;
-                        cost_MU_car = carCostModel.calculateCost_MU(person, trip_car, carElements);
-                        euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
+                        vehicleTravelTime += leg.getTravelTime().seconds() / 60.0 ;
                         break;
                     default:
                         throw new IllegalStateException("Unknown mode in car trip: " + leg.getMode());
                 }
             }
         }
+        vehicleTravelTime += parameters.car.constantParkingSearchPenalty_min;
+
+        DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(car_pt, trip.getDestinationActivity(), "car",
+                carElements, person.hashCode(), carElements.get(0).hashCode(), 1000, new AttributesImpl());
+        cost_MU_car = carCostModel.calculateCost_MU(person, trip_car, carElements);
+        euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
 
         int trip_commuting = 0;
         int trip_others = 0;
