@@ -25,9 +25,6 @@ public class CarUtilityEstimator implements UtilityEstimator {
 	private final ModeParameters parameters;
 	private final CarPredictor predictor;
 	private final PersonPredictor personPredictor;
-	private final static List<String> carTravelTimes = new LinkedList<>();
-	private static boolean RecordActive = false;
-
 
 	@Inject
 	public CarUtilityEstimator(ModeParameters parameters, CarPredictor predictor, PersonPredictor personPredictor) {
@@ -36,56 +33,35 @@ public class CarUtilityEstimator implements UtilityEstimator {
 		this.personPredictor = personPredictor;
 	}
 
-	protected double estimateConstantUtility() {
-		return parameters.car.alpha_u;
+	protected double estimateConstantUtility(CarVariables variables) {
+		return variables.trip_commuting * parameters.car.alpha_u_commuting +
+				variables.trip_others * parameters.car.alpha_u_others;
 	}
-
+	// BYIN 2025-01: add accessEgressTime to in_vehicle_time, instead of usinge stimateAccessEgressTimeUtility.
 	protected double estimateTravelTimeUtility(CarVariables variables) {
-		return parameters.car.betaTravelTime_u_min * variables.travelTime_min;
+		return variables.trip_commuting * parameters.car.betaTravelTime_u_min_commuting * (variables.travelTime_min + variables.accessEgressTime_min) +
+				variables.trip_others * parameters.car.betaTravelTime_u_min_others * variables.travelTime_min + variables.accessEgressTime_min;
 	}
 
-	protected double estimateAccessEgressTimeUtility(CarVariables variables) {
-		double thetaWalkThreshold = 20.0;
-		double penaltyWalk = 0.0;
-		penaltyWalk = Math.exp(Math.log(101) * variables.accessEgressTime_min/thetaWalkThreshold) - 1; // BYIN
-		//return parameters.walk.betaTravelTime_u_min * variables.accessEgressTime_min; // reference_0
-		return parameters.walk.betaAccessEgressTravelTime_u_min * variables.accessEgressTime_min - penaltyWalk;
-	}
+//	protected double estimateAccessEgressTimeUtility(CarVariables variables) {
+//		double thetaWalkThreshold = 20.0;
+//		double penaltyWalk = 0.0;
+//		penaltyWalk = Math.exp(Math.log(101) * variables.accessEgressTime_min/thetaWalkThreshold) - 1; // BYIN
+//		//return parameters.walk.betaTravelTime_u_min * variables.accessEgressTime_min; // reference_0
+//		return variables.trip_commuting * (parameters.walk.betaAccessEgressTravelTime_u_min * variables.accessEgressTime_min - penaltyWalk) +
+//				variables.trip_others * (parameters.walk.betaAccessEgressTravelTime_u_min * variables.accessEgressTime_min - penaltyWalk);
+//	}
 
 	protected double estimateMonetaryCostUtility(CarVariables variables) {
-		return parameters.betaCost_u_MU * EstimatorUtils.interaction(variables.euclideanDistance_km,
-				parameters.referenceEuclideanDistance_km, parameters.lambdaCostEuclideanDistance) * variables.cost_MU;
+		return variables.trip_commuting * parameters.betaCost_u_MU_commuting * EstimatorUtils.interaction(variables.euclideanDistance_km,
+				parameters.referenceEuclideanDistance_km, parameters.lambdaCostEuclideanDistance) * variables.cost_MU +
+				variables.trip_others * parameters.betaCost_u_MU_others * EstimatorUtils.interaction(variables.euclideanDistance_km,
+						parameters.referenceEuclideanDistance_km, parameters.lambdaCostEuclideanDistance) * variables.cost_MU;
 	}
 
-
-    // BYIN feb 24
-	public List<String> getCarTravelTimes() {
-		return carTravelTimes;
-	}
-	public void setRecordActive() {
-		this.RecordActive = true;
-	}
-
-	protected void saveTripTravelTime (CarVariables variables, Person person, DiscreteModeChoiceTrip trip) {
-
-		String personID = person.getId().toString();
-
-		int totalSecs = (int) trip.getDepartureTime();
-		int hours = (totalSecs / 3600);
-		int minutes = (totalSecs % 3600) / 60;
-		int seconds = totalSecs % 60;
-		String tripDepTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-
-		double travelTime_min = 0.0;
-		travelTime_min = variables.travelTime_min + variables.accessEgressTime_min;
-		travelTime_min = Precision.round(travelTime_min, 1);
-
-		double euclideanDistance = 0.0;
-		euclideanDistance = variables.euclideanDistance_km;
-		if (RecordActive) {
-			carTravelTimes.add(personID + ";" + tripDepTime + ";" +  travelTime_min + ";" + euclideanDistance);
-		}
-
+	protected  double estimateParkingPressureUtility(CarVariables variables) {
+		return variables.trip_commuting * parameters.car.betaParkingPressure_commuting * parameters.car.constantParkingPressure +
+				variables.trip_others * parameters.car.betaParkingPressure_others * parameters.car.constantParkingPressure;
 	}
 
 	@Override
@@ -93,19 +69,15 @@ public class CarUtilityEstimator implements UtilityEstimator {
 		CarVariables variables = predictor.predictVariables(person, trip, elements);
 		PersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);
 
-        // BYIN feb 24
-		saveTripTravelTime (variables, person, trip);
-
+		double coefficient_income = Math.pow(personVariables.income/parameters.mean_equ_income, parameters.income_power);
 
 		double utility = 0.0;
-		double coefficient_time_income = Math.exp(parameters.lambda_time * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
-		double coefficient_cost_income = Math.exp(parameters.lambda_cost * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
-
-
-		utility += estimateConstantUtility();
-		utility += estimateTravelTimeUtility(variables) * coefficient_time_income;
-		utility += estimateAccessEgressTimeUtility(variables) * coefficient_time_income;
-		utility += estimateMonetaryCostUtility(variables) * coefficient_cost_income;
+		utility += estimateConstantUtility(variables);
+		utility += estimateTravelTimeUtility(variables);
+		utility += estimateMonetaryCostUtility(variables) * coefficient_income;
+		utility += estimateParkingPressureUtility(variables);
+		utility += (variables.trip_commuting * parameters.betaCar_gender_commuting * personVariables.gender +
+				variables.trip_others * parameters.betaCar_gender_others * personVariables.gender);
 
 		return utility;
 	}

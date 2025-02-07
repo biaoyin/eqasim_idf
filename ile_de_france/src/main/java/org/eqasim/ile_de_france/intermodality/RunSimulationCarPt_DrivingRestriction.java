@@ -51,15 +51,16 @@ import java.io.IOException;
 import java.util.*;
 
 public class RunSimulationCarPt_DrivingRestriction {
-	static String outputPath = "E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-5pct/PTCar_DRZ_paris_4arr_rer_train_";
+	static String outputPath = "E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-5pct/New_DMC/Rayane_travel_time_com/PTCar_drz_paris";
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/driving_restriction_paris_4arr/ile_de_france_config_carInternal.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/driving_restriction/ile_de_france_config_carInternal.xml"};
 		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train_outside_paris.csv";
 
 		double car_pt_constant = 0.75;
 		TestCarPtPara tp = new TestCarPtPara();
 		tp.setPara(car_pt_constant);
+		tp.setCarPtSavePath(outputPath);
 
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
@@ -69,11 +70,11 @@ public class RunSimulationCarPt_DrivingRestriction {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(100);
-		/*config.controler().setFirstIteration(60);
-		config.controler().setLastIteration(100);*/
+		config.controler().setLastIteration(60);
+        //config.controler().setFirstIteration(60);
+		//config.controler().setLastIteration(61);
 
-		config.controler().setOutputDirectory(outputPath +  car_pt_constant);
+		config.controler().setOutputDirectory(outputPath);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
 		// multi-stage car trips
@@ -82,7 +83,9 @@ public class RunSimulationCarPt_DrivingRestriction {
 
 		//1) driving restriction setting
 		config.network().setInputFile("ile_de_france_network_carInternal.xml.gz");
-		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");  //ile_de_france_population_carInternal_residentOnly.xml.gz
+		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");
+		//config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly_allmodes_available.xml");  //comparison of travel time for all travel models BYIN 04/2024
+		//config.plans().setInputFile("E:\\lvmt_BY\\simulation_output\\eqasim_idf\\ile-de-france-5pct\\New_DMC\\Rayane_travel_time_com\\PTCar_drz_paris_it.60\\60.plans.allmodes_available.xml");
 		config.vehicles().setVehiclesFile("vehicle_types.xml");
 		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java

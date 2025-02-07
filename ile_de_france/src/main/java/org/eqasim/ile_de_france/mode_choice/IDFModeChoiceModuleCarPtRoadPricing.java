@@ -9,15 +9,18 @@ import org.eqasim.core.simulation.mode_choice.AbstractEqasimExtension;
 import org.eqasim.core.simulation.mode_choice.ParameterDefinition;
 import org.eqasim.core.simulation.mode_choice.constraints.IntermodalModesConstraint;
 import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
+import org.eqasim.core.simulation.mode_choice.utilities.estimators.BikeUtilityEstimator;
+import org.eqasim.core.simulation.mode_choice.utilities.estimators.CarPassengerUtilityEstimator;
 import org.eqasim.core.simulation.mode_choice.utilities.estimators.CarPtUtilityEstimator;
 import org.eqasim.core.simulation.mode_choice.utilities.estimators.PtCarUtilityEstimator;
 import org.eqasim.ile_de_france.mode_choice.costs.IDFCarCostModel;
 import org.eqasim.ile_de_france.mode_choice.costs.IDFPtCostModel;
 import org.eqasim.ile_de_france.mode_choice.parameters.IDFCostParameters;
 import org.eqasim.ile_de_france.mode_choice.parameters.IDFModeParameters;
-import org.eqasim.ile_de_france.mode_choice.utilities.estimators.IDFBikeUtilityEstimator;
-import org.eqasim.ile_de_france.mode_choice.utilities.estimators.IDFCarUtilityEstimatorWithRoadPricing;
+import org.eqasim.ile_de_france.mode_choice.utilities.estimators.*;
 import org.eqasim.ile_de_france.mode_choice.utilities.predictors.IDFPersonPredictor;
+import org.eqasim.ile_de_france.mode_choice.utilities.predictors.IDFPtPredictor;
+import org.eqasim.ile_de_france.mode_choice.utilities.predictors.IDFCarRoadPricingPredictor;
 import org.eqasim.ile_de_france.mode_choice.utilities.predictors.IDFSpatialPredictor;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.network.Network;
@@ -41,9 +44,10 @@ public class IDFModeChoiceModuleCarPtRoadPricing extends AbstractEqasimExtension
 
     public static final String CAR_ESTIMATOR_NAME = "IDFCarUtilityEstimator";
     public static final String BIKE_ESTIMATOR_NAME = "IDFBikeUtilityEstimator";
+    public static final String PT_ESTIMATOR_NAME = "IDFPtUtilityEstimator";
 
-    public static final String CAR_PT_ESTIMATOR_NAME = "CarPtUtilityEstimator";
-    public static final String PT_CAR_ESTIMATOR_NAME = "PtCarUtilityEstimator";
+    public static final String CAR_PT_ESTIMATOR_NAME = "IDFCarPtUtilityEstimator";
+    public static final String PT_CAR_ESTIMATOR_NAME = "IDFPtCarUtilityEstimator";
 
     public final List<Coord> parkRideCoords;
     public final Network network;
@@ -59,9 +63,13 @@ public class IDFModeChoiceModuleCarPtRoadPricing extends AbstractEqasimExtension
 
     @Override
     protected void installEqasimExtension() {
+        //IDF scenario
         bindModeAvailability(MODE_AVAILABILITY_NAME).to(IDFModeAvailabilityCarPt.class);
-
         bind(IDFPersonPredictor.class);
+        bind(IDFPtPredictor.class);
+
+        // road pricing case
+        bind(IDFCarRoadPricingPredictor.class);
 
         bindCostModel(CAR_COST_MODEL_NAME).to(IDFCarCostModel.class);
         bindCostModel(PT_COST_MODEL_NAME).to(IDFPtCostModel.class);
@@ -69,27 +77,21 @@ public class IDFModeChoiceModuleCarPtRoadPricing extends AbstractEqasimExtension
         //road pricing case: BYIN 2023-04-28
         bindUtilityEstimator(CAR_ESTIMATOR_NAME).to(IDFCarUtilityEstimatorWithRoadPricing.class);
         bindUtilityEstimator(BIKE_ESTIMATOR_NAME).to(IDFBikeUtilityEstimator.class);
-
-        // Register the predictor
-        bind(ParkRideManager.class);
-        // Register the estimator
-
-        //For car_pt (or pt_car) trip, we made two assumptions to simplify the settings. 1) there is not "IDFCarPtUtilityEstimator" as car legs only happen in suburban (estimateUrbanUtility is 0) ; 2) there is no IDFCarPtUtilityEstimatorWithRoadPricing as the same reason regarding the tolled area.
-        // For generality, we can add these two files for car_pt mode.
-        bindUtilityEstimator(CAR_PT_ESTIMATOR_NAME).to(CarPtUtilityEstimator.class);
-        bindUtilityEstimator(PT_CAR_ESTIMATOR_NAME).to(PtCarUtilityEstimator.class);
+        // BYIN 2025-01: add the IDFPtUtilityEstimator.class with new added OnlyBus utility
+        bindUtilityEstimator(PT_ESTIMATOR_NAME).to(IDFPtUtilityEstimator.class);
+        // BYIN 2025-01: add the IDFCarPtUtilityEstimator.class with new added OnlyBus utility
+        bindUtilityEstimator(CAR_PT_ESTIMATOR_NAME).to(IDFCarPtUtilityEstimator.class);
+        // BYIN 2025-01: add the IDFPtCarUtilityEstimator.class with new added OnlyBus utility
+        bindUtilityEstimator(PT_CAR_ESTIMATOR_NAME).to(IDFPtCarUtilityEstimator.class);
 
         bind(IDFSpatialPredictor.class);
-
-        //bind(CarPtPredictor.class);
-        //bind(PtCarPredictor.class);
         bind(ModeParameters.class).to(IDFModeParameters.class);
         // Constraint register
         bindTourConstraintFactory("IntermodalModesConstraint").to(IntermodalModesConstraint.Factory.class);
-
         // Intermodal count: issue of excuted plan eventhandler here: might it only record the results before tourconstraint validation.
         addEventHandlerBinding().to(CarPtEventHandler.class);
     }
+
 
     @Provides
     @Singleton

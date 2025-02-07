@@ -12,7 +12,9 @@ import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Leg;
+import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.router.DefaultRoutingRequest;
 import org.matsim.core.router.LinkWrapperFacility;
 import org.matsim.facilities.Facility;
 import org.matsim.pt.router.TransitRouter;
@@ -112,10 +114,10 @@ public class BatchPublicTransportRouter {
 					Facility fromFacility = new LinkWrapperFacility(NetworkUtils.getNearestLink(network, fromCoord));
 					Facility toFacility = new LinkWrapperFacility(NetworkUtils.getNearestLink(network, toCoord));
 
-					List<Leg> legs = router.calcRoute(fromFacility, toFacility, task.departureTime, null);
+					List<? extends PlanElement> planElements = router.calcRoute(DefaultRoutingRequest.withoutAttributes(fromFacility, toFacility, task.departureTime, null));
 					List<RouteInformation> routeInformation = new LinkedList<>();
 
-					if (legs != null) {
+					if (planElements != null) {
 						boolean isFirstVehicularLeg = true;
 						result.isOnlyWalk = 1;
 
@@ -128,24 +130,26 @@ public class BatchPublicTransportRouter {
 
 						int currentIndex = 0;
 
-						for (Leg leg : legs) {
+						for (PlanElement planElement : planElements) {
+							if(!(planElement instanceof  Leg)) {
+								continue;
+							}
+							Leg leg = (Leg) planElement;
 							boolean isFirstLeg = currentIndex == 0;
-							boolean isLastLeg = currentIndex == legs.size() - 1;
+							boolean isLastLeg = currentIndex == planElements.size() - 1;
 							currentIndex++;
 
-							if (leg.getMode().equals(TransportMode.access_walk)
-									|| (leg.getMode().equals(TransportMode.walk) && isFirstLeg)) {
+							if (leg.getMode().contains(TransportMode.walk) && isFirstLeg) {
 								result.accessTravelTime_min += leg.getTravelTime().seconds() / 60.0;
 								result.accessDistance_km += leg.getRoute().getDistance() * 1e-3;
-							} else if (leg.getMode().equals(TransportMode.egress_walk)
-									|| (leg.getMode().equals(TransportMode.walk) && isLastLeg)) {
+							} else if (leg.getMode().contains(TransportMode.walk) && isLastLeg) {
 								result.egressTravelTime_min += leg.getTravelTime().seconds() / 60.0;
 								result.egressDistance_km += leg.getRoute().getDistance() * 1e-3;
 							} else if (leg.getMode().equals(TransportMode.transit_walk)
-									|| (leg.getMode().equals(TransportMode.walk) && !isFirstLeg && !isLastLeg)) {
+									|| (leg.getMode().contains(TransportMode.walk) && !isFirstLeg && !isLastLeg)) {
 								result.transferTravelTime_min += leg.getTravelTime().seconds() / 60.0;
 								result.transferDistance_km += leg.getRoute().getDistance() * 1e-3;
-							} else if (leg.getMode().equals(TransportMode.pt)) {
+							} else if (leg.getMode().contains(TransportMode.pt)) {
 								TransitPassengerRoute route = (TransitPassengerRoute) leg.getRoute();
 
 								double waitingTime = route.getBoardingTime().seconds()

@@ -14,12 +14,14 @@ public class PtCarVariables implements BaseVariables{
     final public double euclideanDistance_km_pt;
     final public double accessEgressTime_min_pt;
     final public double cost_MU_pt;
+    final public int trip_commuting;
+    final public int trip_others;
 
     // To do: Add park and ride facility characteristic such as capacity
 
     public PtCarVariables(double travelTime_min, double euclideanDistance_km_car, double accessEgressTime_min_car,
                           double cost_MU_car, double inVehicleTime_min, double waitingTime_min, int numberOfLineSwitches,
-                          double euclideanDistance_km_pt, double accessEgressTime_min_pt, double cost_MU_pt) {
+                          double euclideanDistance_km_pt, double accessEgressTime_min_pt, double cost_MU_pt, int trip_commuting, int trip_others) {
         this.travelTime_min = travelTime_min;
         this.cost_MU_car = cost_MU_car;
         this.euclideanDistance_km_car = euclideanDistance_km_car;
@@ -30,5 +32,7 @@ public class PtCarVariables implements BaseVariables{
         this.cost_MU_pt = cost_MU_pt;
         this.euclideanDistance_km_pt = euclideanDistance_km_pt;
         this.accessEgressTime_min_pt = accessEgressTime_min_pt;
+        this.trip_commuting = trip_commuting;
+        this.trip_others = trip_others;
     }
 }

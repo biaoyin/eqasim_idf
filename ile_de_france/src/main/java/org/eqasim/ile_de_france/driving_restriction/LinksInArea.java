@@ -1,6 +1,7 @@
 package org.eqasim.ile_de_france.driving_restriction;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
 import org.matsim.api.core.v01.Id;
@@ -21,7 +22,7 @@ import java.util.*;
 
 
 public class LinksInArea {
-    private static final Logger LOG = Logger.getLogger(LinksInArea.class);
+    private static final Logger LOG = LogManager.getLogger(LinksInArea.class);
 
     public static void main (String[] args) throws IOException {
         // Input and output files

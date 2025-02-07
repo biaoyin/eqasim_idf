@@ -33,41 +33,40 @@ public class IDFCarUtilityEstimatorWithRoadPricing extends CarUtilityEstimator {
 		this.roadPricingPredictor = roadPricingPredictor;
 	}
 
-	protected double estimateUrbanUtility(IDFSpatialVariables variables) {
-		double utility = 0.0;
-
-		if (variables.hasUrbanOrigin && variables.hasUrbanDestination) {
-			utility += parameters.idfCar.betaInsideUrbanArea;
-		}
-
-		if (variables.hasUrbanOrigin || variables.hasUrbanDestination) {
-			utility += parameters.idfCar.betaCrossingUrbanArea;
-		}
-
-		return utility;
-	}
+//	protected double estimateUrbanUtility(IDFSpatialVariables variables) {
+//		double utility = 0.0;
+//
+//		if (variables.hasUrbanOrigin && variables.hasUrbanDestination) {
+//			utility += parameters.idfCar.betaInsideUrbanArea;
+//		}
+//
+//		if (variables.hasUrbanOrigin || variables.hasUrbanDestination) {
+//			utility += parameters.idfCar.betaCrossingUrbanArea;
+//		}
+//
+//		return utility;
+//	}
 
 	protected double estimateRoadPricing(IDFCarRoadPricingVariables variables) {
 		double utility = 0.0;
 
-		utility += parameters.betaCost_u_MU * variables.road_pricing_fee;  //BYIN:  betaCost_u_MU: what is the physical meaning of this parameter ?? 2023-04
+		utility += (variables.trip_commuting * parameters.betaCost_u_MU_commuting * variables.road_pricing_fee +
+		variables.trip_others * parameters.betaCost_u_MU_others * variables.road_pricing_fee);  //BYIN 2023-04:  betaCost_u_MU: what is the physical meaning of this parameter ??
 
 		return utility;
 	}
 
 	@Override
 	public double estimateUtility(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
-		IDFSpatialVariables variables = spatialPredictor.predictVariables(person, trip, elements);
+		//IDFSpatialVariables variables = spatialPredictor.predictVariables(person, trip, elements);
 		IDFCarRoadPricingVariables carRoadPricingVariables = roadPricingPredictor.predictVariables(person, trip, elements);
 		PersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);
+		double coefficient_income = Math.pow(personVariables.income/parameters.mean_equ_income, parameters.income_power);
 
 		double utility = 0.0;
-		double coefficient_cost_income = Math.exp(parameters.lambda_cost * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
-
 		utility += super.estimateUtility(person, trip, elements);
-		utility += estimateUrbanUtility(variables);
-		utility += estimateRoadPricing(carRoadPricingVariables) * coefficient_cost_income;
-
+		//utility += estimateUrbanUtility(variables); // BYIN 2025-01: not considered in the new dmc model
+		utility += estimateRoadPricing(carRoadPricingVariables) * coefficient_income;
 		return utility;
 	}
 }

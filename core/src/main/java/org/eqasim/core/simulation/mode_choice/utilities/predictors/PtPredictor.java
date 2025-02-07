@@ -3,6 +3,7 @@ package org.eqasim.core.simulation.mode_choice.utilities.predictors;
 import java.util.List;
 
 import org.eqasim.core.simulation.mode_choice.cost.CostModel;
+import org.eqasim.core.simulation.mode_choice.parameters.ModeParameters;
 import org.eqasim.core.simulation.mode_choice.utilities.variables.PtVariables;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.population.Leg;
@@ -16,9 +17,11 @@ import com.google.inject.name.Named;
 
 public class PtPredictor extends CachedVariablePredictor<PtVariables> {
 	private CostModel costModel;
+	private final ModeParameters parameters;
 
 	@Inject
-	public PtPredictor(@Named("pt") CostModel costModel) {
+	public PtPredictor(ModeParameters parameters, @Named("pt") CostModel costModel) {
+		this.parameters = parameters;
 		this.costModel = costModel;
 	}
 
@@ -30,13 +33,16 @@ public class PtPredictor extends CachedVariablePredictor<PtVariables> {
 		 * time by departing at the proper time.
 		 */
 
-		int numberOfVehicularTrips = 0;
+		int numberOfVehicularLegs = 0;
 		boolean isFirstWaitingTime = true;
 
 		// Track relevant variables
 		double inVehicleTime_min = 0.0;
 		double waitingTime_min = 0.0;
 		double accessEgressTime_min = 0.0;
+
+		int trip_commuting = 0;
+		int trip_others = 0;
 
 		for (PlanElement element : elements) {
 			if (element instanceof Leg) {
@@ -65,7 +71,7 @@ public class PtPredictor extends CachedVariablePredictor<PtVariables> {
 						isFirstWaitingTime = false;
 					}
 
-					numberOfVehicularTrips++;
+					numberOfVehicularLegs++;
 					break;
 				default:
 					throw new IllegalStateException("Unknown mode in PT trip: " + leg.getMode());
@@ -73,14 +79,22 @@ public class PtPredictor extends CachedVariablePredictor<PtVariables> {
 			}
 		}
 
-		int numberOfLineSwitches = Math.max(0, numberOfVehicularTrips - 1);
+		int numberOfLineSwitches = Math.max(0, numberOfVehicularLegs - 1);
 
 		// Calculate cost
-		double cost_CHF = costModel.calculateCost_MU(person, trip, elements);
+		// BYIN 2025-01: set public transport cost to 0.8 euros
+		// double cost_CHF = costModel.calculateCost_MU(person, trip, elements);
+		trip_commuting = PredictorUtils.getCommutingTripPurpose(trip);
+		if (trip_commuting == 1) {
+			trip_others = 0;
+		} else {
+			trip_others = 1;
+		}
 
+		double cost_CHF = parameters.pt.cost_MU_constant;
 		double euclideanDistance_km = PredictorUtils.calculateEuclideanDistance_km(trip);
 
 		return new PtVariables(inVehicleTime_min, waitingTime_min, accessEgressTime_min, numberOfLineSwitches, cost_CHF,
-				euclideanDistance_km);
+				euclideanDistance_km, trip_commuting, trip_others);
 	}
 }

@@ -10,5 +10,5 @@ public class TourLengthFilter implements TourFilter {
 	@Override
 	public boolean filter(Person person, List<DiscreteModeChoiceTrip> tour) {
 		return tour.size() <= 6;
-	}
+	}// BYIN. for purpose of modal time comparison, set non-constraint to tour.size with big value (default is 6)
 }

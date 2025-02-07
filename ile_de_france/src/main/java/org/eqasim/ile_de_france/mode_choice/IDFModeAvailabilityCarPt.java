@@ -21,12 +21,15 @@ public class IDFModeAvailabilityCarPt implements ModeAvailability {
 
 		// Check car availability
 		boolean carAvailability = true;
-
-		if ("no".equals(PersonUtils.getLicense(person))) {
-			carAvailability = false;
-		}
-
-		if ("none".equals((String) person.getAttributes().getAttribute("carAvailability"))) {
+//		if ("no".equals(PersonUtils.getLicense(person))) {
+//			carAvailability = false;
+//		}
+//
+//		if ("none".equals((String) person.getAttributes().getAttribute("carAvailability"))) {
+//			carAvailability = false;
+//		}
+		//BYIN 2025-01: if age < 18, carAvailability = false
+		if ((Integer) person.getAttributes().getAttribute("age") < 18) {
 			carAvailability = false;
 		}
 
@@ -44,10 +47,10 @@ public class IDFModeAvailabilityCarPt implements ModeAvailability {
 		// Check bike availability
 		boolean bikeAvailability = true;
 
-		if ("none".equals((String) person.getAttributes().getAttribute("bikeAvailability"))) {
-			bikeAvailability = false;
-		}
-
+		// BYIN 2025-01: bike is always available
+//		if ("none".equals((String) person.getAttributes().getAttribute("bikeAvailability"))) {
+//			bikeAvailability = false;
+//		}
 		if (bikeAvailability) {
 			modes.add(TransportMode.bike);
 		}
@@ -59,12 +62,15 @@ public class IDFModeAvailabilityCarPt implements ModeAvailability {
 			modes.add("outside");
 		}
 
-		// Add special mode "car_passenger" if applicable
-		Boolean isCarPassenger = (Boolean) person.getAttributes().getAttribute("isPassenger");
+		// BYIN 2025-01: car_passenger is always available
+		modes.add("car_passenger");
 
-		if (isCarPassenger != null && isCarPassenger) {
-			modes.add("car_passenger");
-		}
+		// Add special mode "car_passenger" if applicable
+//		Boolean isCarPassenger = (Boolean) person.getAttributes().getAttribute("isPassenger");
+//
+//		if (isCarPassenger != null && isCarPassenger) {
+//			modes.add("car_passenger");
+//		}
 
 		return modes;
 	}

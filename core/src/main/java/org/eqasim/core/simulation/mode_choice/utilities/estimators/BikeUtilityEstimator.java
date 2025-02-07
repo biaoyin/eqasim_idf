@@ -1,6 +1,7 @@
 package org.eqasim.core.simulation.mode_choice.utilities.estimators;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -21,8 +22,7 @@ public class BikeUtilityEstimator implements UtilityEstimator {
 	private final ModeParameters parameters;
 	private final BikePredictor bikePredictor;
 	private final PersonPredictor personPredictor;
-	private final static List<String> bikeTravelTimes = new LinkedList<>();
-	private static boolean  RecordActive = false;
+
 	@Inject
 	public BikeUtilityEstimator(ModeParameters parameters, PersonPredictor personPredictor,
 			BikePredictor bikePredictor) {
@@ -31,60 +31,31 @@ public class BikeUtilityEstimator implements UtilityEstimator {
 		this.personPredictor = personPredictor;
 	}
 
-	protected double estimateConstantUtility() {
-		return parameters.bike.alpha_u;
+	protected double estimateConstantUtility(BikeVariables variables) {
+		return variables.trip_commuting * parameters.bike.alpha_u_commuting +
+				variables.trip_others * parameters.bike.alpha_u_others;
 	}
 
 	protected double estimateTravelTimeUtility(BikeVariables variables) {
-		return parameters.bike.betaTravelTime_u_min * variables.travelTime_min;
+		return variables.trip_commuting * parameters.bike.betaTravelTime_u_min_commuting * variables.travelTime_min +
+				variables.trip_others * parameters.bike.betaTravelTime_u_min_others * variables.travelTime_min;
 	}
 
 	protected double estimateAgeOver18Utility(PersonVariables variables) {
 		return parameters.bike.betaAgeOver18_u_a * Math.max(0.0, variables.age_a - 18);
 	}
 
-	// BYIN feb 24
-	public List<String> getBikeTravelTimes() {
-		return bikeTravelTimes;
-	}
-	public void setRecordActive() {
-		this.RecordActive = true;
-	}
-	protected void saveTripTravelTime (BikeVariables variables, Person person, DiscreteModeChoiceTrip trip) {
-
-		String personID = person.getId().toString();
-
-		int totalSecs = (int) trip.getDepartureTime();
-		int hours = (totalSecs / 3600);
-		int minutes = (totalSecs % 3600) / 60;
-		int seconds = totalSecs % 60;
-		String tripDepTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-
-		double travelTime_min = 0.0;
-		travelTime_min = variables.travelTime_min;
-		travelTime_min = Precision.round(travelTime_min, 1);
-		double euclideanDistance = 0.0;
-		euclideanDistance = travelTime_min * 60 * 3.1 / 1.4 /1000;
-
-		if (RecordActive) {
-			bikeTravelTimes.add(personID + ";" + tripDepTime + ";" + travelTime_min + ";" + euclideanDistance);
-		}
-	}
-
 	@Override
 	public double estimateUtility(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
 		PersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);
-		BikeVariables bikeVariables = bikePredictor.predictVariables(person, trip, elements);
-
-		// BYIN feb 24
-		saveTripTravelTime (bikeVariables, person, trip);
+		BikeVariables variables = bikePredictor.predictVariables(person, trip, elements);
 
 		double utility = 0.0;
-
-		utility += estimateConstantUtility();
-		utility += estimateTravelTimeUtility(bikeVariables) * Math.exp(parameters.lambda_time * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
-		utility += estimateAgeOver18Utility(personVariables);
-
+		utility += estimateConstantUtility(variables);
+		utility += estimateTravelTimeUtility(variables);
+		//utility += estimateAgeOver18Utility(personVariables);
+		utility += (variables.trip_commuting * parameters.betaBike_gender_commuting * personVariables.gender +
+				variables.trip_others * parameters.betaBike_gender_others * personVariables.gender);
 		return utility;
 	}
 }

@@ -12,52 +12,98 @@ public class IDFModeParameters extends ModeParameters {
 		public double betaInsideUrbanArea;
 	}
 
+	public class IDFPtParameters {
+		public double onlyBus_u_commuting;
+		public double onlyBus_u_others;
+	}
+
 	public final IDFCarParameters idfCar = new IDFCarParameters();
 	public final IDFBikeParameters idfBike = new IDFBikeParameters();
+	public final IDFPtParameters idfPt = new IDFPtParameters();
 
 	public static IDFModeParameters buildDefault() {
 		IDFModeParameters parameters = new IDFModeParameters();
 
 		// Cost
-		parameters.betaCost_u_MU = -0.206;
-		parameters.lambdaCostEuclideanDistance = -0.4;
+		parameters.betaCost_u_MU_commuting = -0.070700;
+		parameters.betaCost_u_MU_others = -0.157372;
+		parameters.lambdaCostEuclideanDistance = 0;// BYIN 2025-01: need a calibration in the new dmc?
 		parameters.referenceEuclideanDistance_km = 40.0;
 
-		// Car
-		parameters.car.alpha_u = 1.35;
-		parameters.car.betaTravelTime_u_min = -0.06;
+		// new DMC with income: BYIN 2025-01
+		parameters.mean_equ_income = 2415.0;
+		parameters.income_power = -0.1588;
+
+		//car
+		parameters.car.alpha_u_commuting = -1.939835;
+		parameters.car.betaTravelTime_u_min_commuting = -0.038951;
+		parameters.betaCar_gender_commuting = -0.402125;
+		parameters.car.betaParkingPressure_commuting = -3.384502;
+
+		parameters.car.alpha_u_others = -1.885067;
+		parameters.car.betaTravelTime_u_min_others = -0.014549;
+		parameters.car.betaParkingPressure_others = -3.824464;
+		parameters.betaCar_gender_others = -0.608134;
+
+		parameters.car.constantParkingPressure = 0.15; //Rayane : average value
 
 		parameters.car.constantAccessEgressWalkTime_min = 4.0;
 		parameters.car.constantParkingSearchPenalty_min = 4.0;
 
-		parameters.idfCar.betaInsideUrbanArea = -0.5;
-		parameters.idfCar.betaCrossingUrbanArea = -1.0;
+		// pt
+		parameters.pt.alpha_u_commuting = -0.696141;
+		parameters.pt.betaLineSwitch_u_commuting = -0.469254;
+		parameters.pt.betaInVehicleTime_u_min_commuting = -0.035997;
+		//parameters.pt.betaWaitingTime_u_min_commuting = -0.0484;
+		//parameters.pt.betaAccessEgressTime_u_min_commuting = -0.0804;
+		//parameters.pt.betaQ1_commuting = 0.;
+		parameters.pt.betaQ2_commuting = -0.484810;
+		parameters.pt.betaQ3_commuting = -0.370423;
+		parameters.pt.betaQ4_commuting = -0.475790;
 
-		parameters.walk.betaAccessEgressTravelTime_u_min = -0.35;  //BYIN
+		parameters.pt.alpha_u_others = -1.586071;
+		parameters.pt.betaLineSwitch_u_others = -0.449813;
+		parameters.pt.betaInVehicleTime_u_min_others = -0.022682;
+		//parameters.pt.betaWaitingTime_u_min_others = -0.0484;
+		//parameters.pt.betaAccessEgressTime_u_min_others = -0.0804;
+		//parameters.pt.betaQ1_others = 0.;
+		parameters.pt.betaQ2_others = -0.510510;
+		parameters.pt.betaQ3_others = -0.870120;
+		parameters.pt.betaQ4_others = -0.768457;
 
-		// PT
-		parameters.pt.alpha_u = 0.0;
-		parameters.pt.betaLineSwitch_u = -0.17;
-		parameters.pt.betaInVehicleTime_u_min = -0.017;
-		parameters.pt.betaWaitingTime_u_min = -0.0484;
-		parameters.pt.betaAccessEgressTime_u_min = -0.0804;
+		parameters.pt.cost_MU_constant = 0.80;
+		parameters.idfPt.onlyBus_u_commuting = -1.715631;
+		parameters.idfPt.onlyBus_u_others = -2.093884;
 
-		// Bike
-		parameters.bike.alpha_u = -2.0;
-		parameters.bike.betaTravelTime_u_min = -0.05;
-		parameters.bike.betaAgeOver18_u_a = -0.0496;
+		////Car_passenger
+		parameters.car_passenger.alpha_u_commuting = -2.882081;
+		parameters.car_passenger.betaTravelTime_u_min_commuting = -0.84630;
+		parameters.car_passenger.betaAvailability_commuting = -2.161479;
+		parameters.car_passenger.alpha_u_others = -3.623212;
+		parameters.car_passenger.betaTravelTime_u_min_others = -0.023233;
+		parameters.car_passenger.betaAvailability_others = -1.091392;
 
-		parameters.idfBike.betaInsideUrbanArea = 1.5;
+		//bike
+		parameters.bike.alpha_u_commuting = -4.273411;
+		parameters.bike.betaTravelTime_u_min_commuting = -0.051972;
+		parameters.betaBike_gender_commuting = -0.579308;
 
-		// Walk
-		parameters.walk.alpha_u = 1.43;
-		parameters.walk.betaTravelTime_u_min = -0.15;
-		parameters.walk.betaAccessEgressTravelTime_u_min = -0.35;  //BYIN: calibration
+		parameters.bike.alpha_u_others = -4.857954;
+		parameters.bike.betaTravelTime_u_min_others = -0.043448;
+		parameters.betaBike_gender_others = -1.038523;
 
-		//DMC with income: BYIN 2023-10
-		parameters.referenceHouseholdIncome = 2000.0;
-		parameters.lambda_time = 0.05;
-		parameters.lambda_cost = -0.30;
+		//walk
+		parameters.walk.betaTravelTime_u_min_commuting = -0.132587;
+		parameters.betaWalk_gender_commuting = -0.105291;
+		parameters.walk.betaTravelTime_u_min_others = -0.137037;
+		parameters.betaWalk_gender_others = -0.436807;
+
+		//car_pt
+		parameters.car_pt.alpha_u_commuting = -1.30;
+		parameters.car_pt.alpha_u_others = -2.20;
+
+		parameters.car_pt.parkingTimeToAccessPt = 5.0; // Default
+		parameters.car_pt.pickupTimeToAccessCar = 5.0;
 
 		return parameters;
 	}

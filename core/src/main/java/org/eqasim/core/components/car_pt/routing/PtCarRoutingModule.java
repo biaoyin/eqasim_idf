@@ -12,11 +12,16 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.core.router.DefaultRoutingRequest;
 import org.matsim.core.router.RoutingModule;
+import org.matsim.core.router.RoutingRequest;
 import org.matsim.facilities.Facility;
+import org.matsim.utils.objectattributes.attributable.Attributes;
+import org.matsim.utils.objectattributes.attributable.AttributesImpl;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 
 //import org.matsim.core.router.StageActivityTypes;
@@ -39,16 +44,20 @@ public class PtCarRoutingModule implements RoutingModule{
     }
 
     @Override
-    public List<? extends PlanElement> calcRoute(Facility fromFacility, Facility toFacility, double departureTime,
-                                                 Person person) {
+    public List<? extends PlanElement> calcRoute(RoutingRequest routingRequest) {
         // Park and ride lot location
+        // BYIN: 2025-01: changes in MATSIM 15.0
+        Facility fromFacility = routingRequest.getFromFacility();
+        Facility toFacility = routingRequest.getToFacility();
+        double departureTime = routingRequest.getDepartureTime();
+        Person person = routingRequest.getPerson();
 
         ParkingFinder prFinder = new ParkingFinder(parkRideCoords);
         Facility prkFacility = prFinder.getParking(person, fromFacility, toFacility, network);
 
         // Creation of a PT trip from the destination point to PR facility
-        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(fromFacility, prkFacility, departureTime,
-                person);
+        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(DefaultRoutingRequest.withoutAttributes(fromFacility, prkFacility, departureTime,
+                        person));  // BYIN 2025-01: changes in MATSIM 15.0.
 
         // double vehicleDistance = Double.NaN;
         double vehicleTravelTime = 0.0;
@@ -83,8 +92,8 @@ public class PtCarRoutingModule implements RoutingModule{
         double carDepartureTime = departureTime + vehicleTravelTime + timeToAccessCar;
 
         // Creation of a  car trip from the PR facility to the origin point (home)
-        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(prkFacility, toFacility, carDepartureTime,
-                person); // Biao: why is this null in default setting?
+        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(DefaultRoutingRequest.withoutAttributes(prkFacility, toFacility, carDepartureTime,
+                person)); // BYIN 2025-01: changes in MATSIM 15.0.
 
         // Creation interaction between pt and car
         Link prLink = NetworkUtils.getNearestLink(network, prkFacility.getCoord());

@@ -11,6 +11,7 @@ import org.eqasim.ile_de_france.IDFConfigurator;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPt;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPtRoadPricing;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleRoadPricing;
+import org.eqasim.ile_de_france.mode_choice.parameters.IDFModeParameters;
 import org.eqasim.ile_de_france.mode_choice.parameters.TestTollFee;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Scenario;
@@ -32,21 +33,21 @@ import org.matsim.core.scenario.ScenarioUtils;
 import java.io.IOException;
 import java.util.*;
 
+//BYIN2025-01: Run Rayane's new dmc (version 2, see dmc_variables_and_equations.pdf. Attention: new scenario inputs need to use,
+// due to the equivalized unit income generated in the new synthetic population.
 public class RunSimulationCarPt_RoadPricing {
-	static String outputPath = "simulation_output/IDF_1pm_car_pt_road_pricing";
+	static String outputPath = "E:\\lvmt_BY\\simulation_output\\eqasim_idf\\ile-de-france-5pct\\New_DMC_2\\base_case";
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pm/base_case/ile_de_france_config.xml"};
+		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/base_case/ile_de_france_config.xml"};
         // set car-pt parameters
 		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train_outside_paris.csv";
-		double car_pt_constant = 0.75;
 		// set road pricing parameters
-		String areaShapeFile = "C:/Users/biao.yin/Documents/MATSIM/Project/eqasim_idf/gis/paris_inner.shp";
-		double fee_toll = 5; //euros
+		String areaShapeFile = "C:/Users/LiuLiu/Documents/MATSIM/Project/eqasim_idf/gis/paris_inner.shp";
+		double fee_toll = 0; //euros
 
 		TestCarPtPara tp = new TestCarPtPara();
-		tp.setPara(car_pt_constant);
-		tp.setCarPtSavePath(outputPath);
+		tp.setCarPtSavePath(outputPath + fee_toll);
 		TestTollFee tf = new TestTollFee();
 		tf.setTollFee(fee_toll);
 		tf.setTollAreaFilePath(areaShapeFile);
@@ -59,15 +60,12 @@ public class RunSimulationCarPt_RoadPricing {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(5);
-		config.controler().setOutputDirectory(outputPath);
-		//config.plans().setInputFile("ile_de_france_population_test_200p.xml");
+		config.controler().setLastIteration(60);
+		config.controler().setOutputDirectory(outputPath + fee_toll);
+		//config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
-
-		// multistage car trips
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
 		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
-
 
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
 			if (ss.getStrategyName().equals("KeepLastSelected")) {
@@ -80,8 +78,13 @@ public class RunSimulationCarPt_RoadPricing {
 
 		// Eqasim config definition to add the mode car_pt estimation
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
-		eqasimConfig.setEstimator("car_pt", "CarPtUtilityEstimator");
-		eqasimConfig.setEstimator("pt_car", "PtCarUtilityEstimator");
+		eqasimConfig.setEstimator("car_pt", "IDFCarPtUtilityEstimator");//BYIN 2025-01: we use the IDF car_pt (pt_car) definition in the new dmc
+		eqasimConfig.setEstimator("pt_car", "IDFPtCarUtilityEstimator");
+
+		eqasimConfig.removeEstimator("car_passenger");
+		eqasimConfig.setEstimator("car_passenger", "CarPassengerUtilityEstimator");
+		eqasimConfig.removeEstimator("pt");
+		eqasimConfig.setEstimator("pt", "IDFPtUtilityEstimator"); //BYIN 2025-01: we use the IDF pt definition rather than the default pt in the config file.
 
 		// Scoring config definition to add the mode car_pt parameters
 		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
@@ -101,15 +104,14 @@ public class RunSimulationCarPt_RoadPricing {
 		paramsPtCarInterAct.setScoringThisActivityAtAll(false);
 
 		// this interaction doesn't work
-//		ActivityParams toll_interaction = new ActivityParams("toll interaction");
-//		toll_interaction.setTypicalDuration(100.0);
-//		toll_interaction.setScoringThisActivityAtAll(false);
+		ActivityParams toll_interaction = new ActivityParams("toll interaction");
+		toll_interaction.setTypicalDuration(100.0);
+		toll_interaction.setScoringThisActivityAtAll(false);
 
 		// Adding "car_pt interaction" to the scoring
 		scoringConfig.addActivityParams(paramscarPtInterAct);
 		scoringConfig.addActivityParams(paramsPtCarInterAct);
-//		scoringConfig.addActivityParams(toll_interaction);
-
+		scoringConfig.addActivityParams(toll_interaction);
 
 		// DMC config definition
 		// Adding the mode "car_pt" and "pt_car" to CachedModes
@@ -119,6 +121,12 @@ public class RunSimulationCarPt_RoadPricing {
 		cachedModes.add("car_pt");
 		cachedModes.add("pt_car");
 		dmcConfig.setCachedModes(cachedModes);
+		// BYIN 2025-01: we add passenger utility now. So here delete the PassengerConstraint
+		Collection<String> tripConstraints = new HashSet<>(dmcConfig.getTripConstraints());
+		if (tripConstraints.contains("PassengerConstraint")){
+			tripConstraints.remove("PassengerConstraint");
+		}
+		dmcConfig.setTripConstraints(tripConstraints);
 
 		// Activation of constraint intermodal modes Using
 		Collection<String> tourConstraints = new HashSet<>(dmcConfig.getTourConstraints());
@@ -144,7 +152,6 @@ public class RunSimulationCarPt_RoadPricing {
 
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModuleCarPt());
-		controller.addOverridingModule(new IDFModeChoiceModuleRoadPricing(cmd, scenario.getPopulation().getFactory()));
 		controller.addOverridingModule(new IDFModeChoiceModuleCarPtRoadPricing(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));
 		controller.addOverridingModule(new EqasimCarPtModule(parkRideCoords));
 		controller.addOverridingModule(new EqasimPtCarModule(parkRideCoords));

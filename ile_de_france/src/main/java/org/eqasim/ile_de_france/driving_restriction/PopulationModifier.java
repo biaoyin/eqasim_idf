@@ -1,6 +1,7 @@
 package org.eqasim.ile_de_france.driving_restriction;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.population.Activity;
@@ -18,19 +19,19 @@ import java.util.*;
 
 public class PopulationModifier {
 
-    private static final Logger LOG = Logger.getLogger(PopulationModifier.class);
-    private static final String scenarioID = "ile-de-france-1pct";
+    private static final Logger LOG = LogManager.getLogger(PopulationModifier.class);
+    private static final String scenarioID = "ile-de-france-5pct";
     public static void main(String[] args) throws IOException {
     // Input and output files
 
         String plansInputFile =  "ile_de_france\\scenarios\\" + scenarioID + "\\base_case\\ile_de_france_population.xml.gz";
-        String plansOutputFile =  "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\ile_de_france_population_carInternal_residentOnly.xml.gz";
-        String outputFile_ResidentsReader = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\personInternalIDsList.txt";
+        String plansOutputFile =  "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction_paris_4arr\\ile_de_france_population_carInternal_residentOnly.xml.gz";
+        String outputFile_ResidentsReader = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction_paris_4arr\\personInternalIDsList.txt";
 
-        String RedStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\RedLinksID.txt";
-        String GreenStreets ="ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\GreenLinksID.txt";
-        String YellowStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\YellowLinksID.txt";
-        String InternalStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction\\InternalLinksID.txt";
+        String RedStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction_paris_4arr\\RedLinksID.txt";
+        String GreenStreets ="ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction_paris_4arr\\GreenLinksID.txt";
+        String YellowStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction_paris_4arr\\YellowLinksID.txt";
+        String InternalStreets = "ile_de_france\\scenarios\\" + scenarioID + "\\driving_restriction_paris_4arr\\InternalLinksID.txt";
 
         //1) preparation: switch to list
         // RedStreets

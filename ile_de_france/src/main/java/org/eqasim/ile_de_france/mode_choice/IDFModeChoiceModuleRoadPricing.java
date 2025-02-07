@@ -12,6 +12,7 @@ import org.eqasim.ile_de_france.mode_choice.parameters.IDFCostParameters;
 import org.eqasim.ile_de_france.mode_choice.parameters.IDFModeParameters;
 import org.eqasim.ile_de_france.mode_choice.utilities.estimators.IDFBikeUtilityEstimator;
 import org.eqasim.ile_de_france.mode_choice.utilities.estimators.IDFCarUtilityEstimator;
+import org.eqasim.ile_de_france.mode_choice.utilities.estimators.IDFPtUtilityEstimator;
 import org.eqasim.ile_de_france.mode_choice.utilities.estimators.IDFCarUtilityEstimatorWithRoadPricing;
 import org.eqasim.ile_de_france.mode_choice.utilities.predictors.IDFCarRoadPricingPredictor;
 import org.eqasim.ile_de_france.mode_choice.utilities.predictors.IDFPersonPredictor;
@@ -33,6 +34,7 @@ public class IDFModeChoiceModuleRoadPricing extends AbstractEqasimExtension {
 
 	public static final String CAR_ESTIMATOR_NAME = "IDFCarUtilityEstimator";
 	public static final String BIKE_ESTIMATOR_NAME = "IDFBikeUtilityEstimator";
+	public static final String PT_ESTIMATOR_NAME = "IDFPtUtilityEstimator";
 
 	private final PopulationFactory populationFactory;
 
@@ -54,8 +56,9 @@ public class IDFModeChoiceModuleRoadPricing extends AbstractEqasimExtension {
 		//road pricing case: BYIN 2023-04-28
 		bindUtilityEstimator(CAR_ESTIMATOR_NAME).to(IDFCarUtilityEstimatorWithRoadPricing.class);
 		bindUtilityEstimator(BIKE_ESTIMATOR_NAME).to(IDFBikeUtilityEstimator.class);
-		bind(IDFSpatialPredictor.class);
+		bindUtilityEstimator(PT_ESTIMATOR_NAME).to(IDFPtUtilityEstimator.class);
 
+		bind(IDFSpatialPredictor.class);
 		bind(ModeParameters.class).to(IDFModeParameters.class);
 	}
 

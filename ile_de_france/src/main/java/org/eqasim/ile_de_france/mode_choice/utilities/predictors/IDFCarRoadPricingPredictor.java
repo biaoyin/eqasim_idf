@@ -2,6 +2,7 @@ package org.eqasim.ile_de_france.mode_choice.utilities.predictors;
 
 import com.google.inject.Inject;
 import org.eqasim.core.simulation.mode_choice.utilities.predictors.CachedVariablePredictor;
+import org.eqasim.core.simulation.mode_choice.utilities.predictors.PredictorUtils;
 import org.eqasim.core.tools.TestCarPtPara;
 import org.eqasim.ile_de_france.mode_choice.parameters.TestTollFee;
 import org.eqasim.ile_de_france.mode_choice.utilities.variables.IDFCarRoadPricingVariables;
@@ -79,7 +80,8 @@ public class IDFCarRoadPricingPredictor extends CachedVariablePredictor<IDFCarRo
         //cas 1 application du road pricing zonale (aire) entre 5h-9h
         //if (travelTime_min >= 330 && travelTime_min <= 540){
 
-            //Origine/Destination dans la ville de Lille
+        //Origine/Destination dans la ville de Lille
+        //BYIN 2025-01: add another condition: trip ori/destination outside Paris, but passing through paris.
          if(polygon_paris_ville.contains(pointOrigin) || polygon_paris_ville.contains(pointDestination)){
             toolPoint = trip.getDestinationActivity().getCoord();
 
@@ -92,6 +94,15 @@ public class IDFCarRoadPricingPredictor extends CachedVariablePredictor<IDFCarRo
          }
         //}
 
-        return new IDFCarRoadPricingVariables(fee_toll);
+        int trip_commuting = 0;
+        int trip_others = 0;
+        trip_commuting = PredictorUtils.getCommutingTripPurpose(trip);
+        if (trip_commuting == 1) {
+            trip_others = 0;
+        } else {
+            trip_others = 1;
+        }
+
+        return new IDFCarRoadPricingVariables(fee_toll, trip_commuting, trip_others);
     }
 }

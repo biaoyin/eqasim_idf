@@ -26,12 +26,13 @@ public class WalkUtilityEstimator implements UtilityEstimator {
 		this.personPredictor = personPredictor;
 	}
 
-	protected double estimateConstantUtility() {
-		return parameters.walk.alpha_u;
-	}
+//	protected double estimateConstantUtility() {
+//		return parameters.walk.alpha_u;
+//	}
 
 	protected double estimateTravelTimeUtility(WalkVariables variables) {
-		return parameters.walk.betaTravelTime_u_min * variables.travelTime_min;
+		return variables.trip_commuting * parameters.walk.betaTravelTime_u_min_commuting * variables.travelTime_min +
+				variables.trip_others * parameters.walk.betaTravelTime_u_min_others * variables.travelTime_min;
 	}
 
 	@Override
@@ -39,10 +40,9 @@ public class WalkUtilityEstimator implements UtilityEstimator {
 		WalkVariables variables = predictor.predictVariables(person, trip, elements);
 		PersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);
 		double utility = 0.0;
-
-		utility += estimateConstantUtility();
-		utility += estimateTravelTimeUtility(variables) * Math.exp(parameters.lambda_time * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
-
+		utility += estimateTravelTimeUtility(variables);
+		utility += (variables.trip_commuting * parameters.betaWalk_gender_commuting * personVariables.gender +
+				variables.trip_others * parameters.betaWalk_gender_others * personVariables.gender);
 		return utility;
 	}
 }

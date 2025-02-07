@@ -17,6 +17,7 @@ import org.matsim.core.router.LinkWrapperFacility;
 import org.matsim.core.router.RoutingModule;
 import org.matsim.facilities.Facility;
 import org.matsim.pt.routes.TransitPassengerRoute;
+import org.matsim.utils.objectattributes.attributable.AttributesImpl;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -72,7 +73,7 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
         PlanElement last_element = ptElements.get(ptElements.size()-1);
         Activity car_pt = (Activity) last_element;
         DiscreteModeChoiceTrip trip_pt = new DiscreteModeChoiceTrip(trip.getOriginActivity(), car_pt, "pt",
-                ptElements, person.hashCode(),ptElements.get(0).hashCode(), 1000);
+                ptElements, person.hashCode(),ptElements.get(0).hashCode(), 1000, new AttributesImpl());
 
         int numberOfVehicularTrips = 0;
         boolean isFirstWaitingTime = true;
@@ -120,17 +121,19 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
         int numberOfLineSwitches = Math.max(0, numberOfVehicularTrips - 1);
 
         // Calculate cost
-        double cost_MU_pt = ptCostModel.calculateCost_MU(person, trip_pt, ptElements);
+        // BYIN 2025-01: set public transport cost to 0.8 euros
+        //double cost_MU_pt = ptCostModel.calculateCost_MU(person, trip_pt, ptElements);
+        double cost_MU_pt = parameters.pt.cost_MU_constant;
         double euclideanDistance_km_pt = PredictorUtils.calculateEuclideanDistance_km(trip_pt);
 
-        double timeToAccessCar = 5;
+        double timeToAccessCar = parameters.car_pt.pickupTimeToAccessCar;
         double euclideanDistance_km_car = 0.0;
         double cost_MU_car= 0.0;
         double vehicleTravelTime = 0.0;
         double accessEgressTime_min_car = 0.0;
         vehicleTravelTime += timeToAccessCar;
         DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(car_pt, trip.getDestinationActivity(), "car",
-                carElements, person.hashCode(), carElements.get(0).hashCode(), 1000);
+                carElements, person.hashCode(), carElements.get(0).hashCode(), 1000, new AttributesImpl());
 
         for (PlanElement element : carElements) {
             if (element instanceof Leg) {
@@ -151,8 +154,17 @@ public class PtCarPredictor extends CachedVariablePredictor<PtCarVariables>{
             }
         }
 
+        int trip_commuting = 0;
+        int trip_others = 0;
+        trip_commuting = PredictorUtils.getCommutingTripPurpose(trip);
+        if (trip_commuting == 1) {
+            trip_others = 0;
+        } else {
+            trip_others = 1;
+        }
+
         return new PtCarVariables(vehicleTravelTime, euclideanDistance_km_car, accessEgressTime_min_car, cost_MU_car,
                 inVehicleTime_min, waitingTime_min, numberOfLineSwitches, euclideanDistance_km_pt,
-                accessEgressTime_min_pt, cost_MU_pt);
+                accessEgressTime_min_pt, cost_MU_pt, trip_commuting, trip_others);
     }
 }

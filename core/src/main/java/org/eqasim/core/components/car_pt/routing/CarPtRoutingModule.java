@@ -16,7 +16,9 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.core.router.DefaultRoutingRequest;
 import org.matsim.core.router.RoutingModule;
+import org.matsim.core.router.RoutingRequest;
 import org.matsim.facilities.Facility;
 
 import java.util.LinkedList;
@@ -44,16 +46,19 @@ public class CarPtRoutingModule implements RoutingModule{
     }
 
     @Override
-    public List<? extends PlanElement> calcRoute(Facility fromFacility, Facility toFacility, double departureTime,
-                                                 Person person) {
-
+    public List<? extends PlanElement> calcRoute(RoutingRequest routingRequest) {
+        // BYIN: 2025-01: changes in MATSIM 15.0
+        Facility fromFacility = routingRequest.getFromFacility();
+        Facility toFacility = routingRequest.getToFacility();
+        double departureTime = routingRequest.getDepartureTime();
+        Person person = routingRequest.getPerson();
         ParkingFinder prFinder = new ParkingFinder(parkRideCoords);
 
         Facility prkFacility = prFinder.getParking(person, fromFacility, toFacility, network);
 
         // Creation of a car trip to the PR facility
-        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(fromFacility, prkFacility, departureTime,
-                person); // Biao: why is this null in default setting?
+        List<? extends PlanElement> carElements = carRoutingModule.calcRoute(DefaultRoutingRequest.withoutAttributes(fromFacility, prkFacility, departureTime,
+                person)); // BYIN: 2025-01: changes in MATSIM 15.0
 
         // double vehicleDistance = Double.NaN;
         double vehicleTravelTime = 0.0;
@@ -89,8 +94,8 @@ public class CarPtRoutingModule implements RoutingModule{
         double ptDepartureTime = departureTime + vehicleTravelTime + timeToAccessPt;
 
         // Creation of a PT trip from the PR facility to the destination
-        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(prkFacility, toFacility, ptDepartureTime,
-                person);
+        List<? extends PlanElement> ptElements = ptRoutingModule.calcRoute(DefaultRoutingRequest.withoutAttributes(prkFacility, toFacility, ptDepartureTime,
+                person));
 
         // Creation interaction between car and pt
         Link prLink = NetworkUtils.getNearestLink(network, prkFacility.getCoord());

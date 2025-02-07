@@ -11,8 +11,12 @@ public class PersonPredictor extends CachedVariablePredictor<PersonVariables> {
 	@Override
 	public PersonVariables predict(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
 		int age_a = PredictorUtils.getAge(person);
-		double income = PredictorUtils.getHouseholdIncome(person);
+		//BYIN 2023-10 household income in dmc_1
+		//double income = PredictorUtils.getHouseholdIncome(person);
 
-		return new PersonVariables(age_a, income);
+		//BYIN 2025-01 equibalized income in dmc_2
+		int gender = PredictorUtils.getGender(person);
+		double income = PredictorUtils.getEquivalizedHouseholdIncome(person);
+		return new PersonVariables(age_a, income, gender);
 	}
 }

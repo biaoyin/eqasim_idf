@@ -1,6 +1,7 @@
 package org.eqasim.ile_de_france.driving_restriction;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -25,7 +26,7 @@ import java.util.Random;
 //version 1: only outside workers
 public class PopulationCapture {
 
-    private static final Logger LOG = Logger.getLogger(PopulationCapture.class);
+    private static final Logger LOG = LogManager.getLogger(PopulationCapture.class);
     private static final String scenarioID = "/ile-de-france-1pm";
     private static final String strategyID = "/driving_restriction";
 

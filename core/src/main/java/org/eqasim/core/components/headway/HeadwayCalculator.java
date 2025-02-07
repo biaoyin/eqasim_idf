@@ -7,6 +7,7 @@ import org.matsim.facilities.Facility;
 import ch.sbb.matsim.routing.pt.raptor.RaptorRoute;
 import ch.sbb.matsim.routing.pt.raptor.RaptorRoute.RoutePart;
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptor;
+import org.matsim.utils.objectattributes.attributable.AttributesImpl;
 
 public class HeadwayCalculator {
 	private final SwissRailRaptor raptor;
@@ -25,7 +26,7 @@ public class HeadwayCalculator {
 		double latestDepartureTime = departureTime + afterDepartureOffset;
 
 		List<RaptorRoute> routes = raptor.calcRoutes(originFacility, destinationFacilty, earliestDepartureTime,
-				departureTime, latestDepartureTime, null);
+				departureTime, latestDepartureTime, null, new AttributesImpl());
 
 		int numberOfPtRoutes = 0;
 

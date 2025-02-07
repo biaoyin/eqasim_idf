@@ -17,6 +17,7 @@ import org.matsim.core.router.LinkWrapperFacility;
 import org.matsim.core.router.RoutingModule;
 import org.matsim.facilities.Facility;
 import org.matsim.pt.routes.TransitPassengerRoute;
+import org.matsim.utils.objectattributes.attributable.AttributesImpl;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -91,18 +92,18 @@ public class CarPtPredictor extends CachedVariablePredictor<CarPtVariables>{
         }
 
         // We take 5 min to park the car and access to PT (transfer time)
-        double timeToAccessPt = 5;
-        vehicleTravelTime += timeToAccessPt;
+        double parkingTimeToAccessPt = parameters.car_pt.parkingTimeToAccessPt;
+        vehicleTravelTime += parkingTimeToAccessPt;
 
         PlanElement last_element = carElements.get(carElements.size()-1);
         Activity car_pt = (Activity) last_element;
         DiscreteModeChoiceTrip trip_car = new DiscreteModeChoiceTrip(trip.getOriginActivity(), car_pt, "car",
-                carElements, person.hashCode(), carElements.get(0).hashCode(),1000);
+                carElements, person.hashCode(), carElements.get(0).hashCode(),1000, new AttributesImpl());
         double cost_MU_car = carCostModel.calculateCost_MU(person, trip_car, carElements);
         double euclideanDistance_km_car = PredictorUtils.calculateEuclideanDistance_km(trip_car);
 
         DiscreteModeChoiceTrip trip_pt = new DiscreteModeChoiceTrip(car_pt, trip.getDestinationActivity(), "pt",
-                ptElements, person.hashCode(), ptElements.get(0).hashCode(), 1000);
+                ptElements, person.hashCode(), ptElements.get(0).hashCode(), 1000, new AttributesImpl());
 
         int numberOfVehicularTrips = 0;
         boolean isFirstWaitingTime = true;
@@ -149,13 +150,23 @@ public class CarPtPredictor extends CachedVariablePredictor<CarPtVariables>{
 
         int numberOfLineSwitches = Math.max(0, numberOfVehicularTrips - 1);
 
-        // Calculate cost
-        double cost_MU_pt = ptCostModel.calculateCost_MU(person, trip_pt, ptElements);
 
+        // Calculate cost
+        // BYIN 2025-01: set public transport cost to 0.8 euros
+        //double cost_MU_pt = ptCostModel.calculateCost_MU(person, trip_pt, ptElements);
+        double cost_MU_pt = parameters.pt.cost_MU_constant;
         double euclideanDistance_km_pt = PredictorUtils.calculateEuclideanDistance_km(trip_pt);
 
+        int trip_commuting = 0;
+        int trip_others = 0;
+        trip_commuting = PredictorUtils.getCommutingTripPurpose(trip);
+        if (trip_commuting == 1) {
+            trip_others = 0;
+        } else {
+            trip_others = 1;
+        }
         return new CarPtVariables(vehicleTravelTime, euclideanDistance_km_car, accessEgressTime_min_car, cost_MU_car,
                 inVehicleTime_min, waitingTime_min, numberOfLineSwitches, euclideanDistance_km_pt,
-                accessEgressTime_min_pt, cost_MU_pt);
+                accessEgressTime_min_pt, cost_MU_pt, trip_commuting, trip_others);
     }
 }

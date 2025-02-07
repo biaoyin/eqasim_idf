@@ -30,7 +30,7 @@ public class IntermediateDMCWriter {
         return String.join(delimiter, new String[] { //
                 "person_id", //
                 "tripDepTime", //
-                "travelTime_min", //
+                "travelTime_min" //
 //                "origin_x", //
 //                "origin_y", //
 //                "destination_x", //
@@ -42,7 +42,7 @@ public class IntermediateDMCWriter {
 //                "preceding_purpose", //
 //                "following_purpose", //
 //                "returning", //
-                "euclidean_distance" //
+                //"euclidean_distance" //
         });
     }
 

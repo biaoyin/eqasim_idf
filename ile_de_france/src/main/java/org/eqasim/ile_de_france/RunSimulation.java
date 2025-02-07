@@ -16,7 +16,8 @@ import org.matsim.core.scenario.ScenarioUtils;
 
 public class RunSimulation {
 	static public void main(String[] args) throws ConfigurationException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-1pct/base_case/ile_de_france_config_adapt.xml"};
+		String inputPath = "G:\\lvmt_TS\\simulations_afterPopCorrect\\output_IdF_egt_100pct\\";
+		args = new String[] {"--config-path", inputPath + "ile_de_france_config.xml"};
 		CommandLine cmd = new CommandLine.Builder(args) //
 				.requireOptions("config-path") //
 				.allowPrefixes("mode-choice-parameter", "cost-parameter") //
@@ -25,8 +26,10 @@ public class RunSimulation {
 		IDFConfigurator configurator = new IDFConfigurator();
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 		//modify some parameters in config file
+		config.plans().setInputFile(inputPath + "simulation_output_ref_180it\\ITERS\\it.60\\60.plans.xml.gz");
+		config.controler().setFirstIteration(60);
 		config.controler().setLastIteration(60);
-		config.controler().setOutputDirectory("E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-1pct/reference_0");
+		config.controler().setOutputDirectory(inputPath + "simulation_output_ref_180it\\outputs_60iter");
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 
 		cmd.applyConfiguration(config);

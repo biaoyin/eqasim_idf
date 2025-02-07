@@ -75,12 +75,12 @@ public class AnalysisOutputListener implements IterationStartsListener, Iteratio
 				isTripAnalysisActive = true;
 				event.getServices().getEvents().addHandler(tripAnalysisListener);
 			}
-			//BYIN  save modal travel time at the last iteration: feb 2024
-			if (event.isLastIteration()) {
-				carUtilityEstimator.setRecordActive();
-				ptUtilityEstimator.setRecordActive();
-				bikeUtilityEstimator.setRecordActive();
-			}
+			//BYIN feb 24 : save modal travel time at the last iteration
+//			if (event.isLastIteration()) {
+//				carUtilityEstimator.setRecordActive();
+//				ptUtilityEstimator.setRecordActive();
+//				bikeUtilityEstimator.setRecordActive();
+//			}
 		}
 
 	}
@@ -95,13 +95,13 @@ public class AnalysisOutputListener implements IterationStartsListener, Iteratio
 				new TripWriter(tripAnalysisListener.getTripItems(), scenarioDistanceUnit, analysisDistanceUnit)
 						.write(path);
 
-            	//BYIN  save modal travel time feb2024
-				if (event.isLastIteration()) {
-					String path2 = outputDirectory.getIterationFilename(event.getIteration(), DMC_FILE_NAME);
-					new IntermediateDMCWriter(carUtilityEstimator.getCarTravelTimes()).write(path2 + "_car.csv");
-					new IntermediateDMCWriter(ptUtilityEstimator.getPtTravelTimes()).write(path2 + "_pt.csv");
-					new IntermediateDMCWriter(bikeUtilityEstimator.getBikeTravelTimes()).write(path2 + "_bike.csv");
-				}
+            	//BYIN feb 24: save modal travel time at the last iteration
+//				if (event.isLastIteration()) {
+//					String path2 = outputDirectory.getIterationFilename(event.getIteration(), DMC_FILE_NAME);
+//					new IntermediateDMCWriter(carUtilityEstimator.getCarTravelTimes()).write(path2 + "_car.csv");
+//					new IntermediateDMCWriter(ptUtilityEstimator.getPtTravelTimes()).write(path2 + "_pt.csv");
+//					new IntermediateDMCWriter(bikeUtilityEstimator.getBikeTravelTimes()).write(path2 + "_bike.csv");
+//				}
 
 
 			}

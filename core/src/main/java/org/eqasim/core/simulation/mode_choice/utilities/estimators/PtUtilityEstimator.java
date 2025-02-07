@@ -24,8 +24,7 @@ public class PtUtilityEstimator implements UtilityEstimator {
 	private final ModeParameters parameters;
 	private final PtPredictor predictor;
 	private final PersonPredictor personPredictor;
-	private final static List<String> ptTravelTimes = new LinkedList<>();
-	private static boolean  RecordActive = false;
+
 
 	@Inject
 	public PtUtilityEstimator(ModeParameters parameters, PtPredictor predictor, PersonPredictor personPredictor) {
@@ -34,59 +33,63 @@ public class PtUtilityEstimator implements UtilityEstimator {
 		this.personPredictor = personPredictor;
 	}
 
-	protected double estimateConstantUtility() {
-		return parameters.pt.alpha_u;
+	protected double estimateConstantUtility(PtVariables variables) {
+		return variables.trip_commuting * parameters.pt.alpha_u_commuting +
+				variables.trip_others * parameters.pt.alpha_u_others;
 	}
 
+	protected double estimateAffordabilityUtility(PersonVariables pv, PtVariables variables) {
+		int quartile_1 = 0;
+		int quartile_2 = 0;
+		int quartile_3 = 0;
+		int quartile_4 = 0;
+		double equ_income = pv.income;
+		if (equ_income <= 1222) {
+			quartile_1 = 1;
+		}
+		if (equ_income > 1222 && equ_income <= 1800) {
+			quartile_2 = 1;
+		}
+		if (equ_income > 1800 && equ_income <= 2667) {
+			quartile_3 = 1;
+		}
+		if (equ_income > 2667) {
+			quartile_4 = 1;
+		}
+		return variables.trip_commuting * (parameters.pt.betaQ2_commuting*quartile_2 +
+				parameters.pt.betaQ3_commuting*quartile_3 + parameters.pt.betaQ4_commuting*quartile_4) +
+				variables.trip_others * (parameters.pt.betaQ2_others*quartile_2 +
+						parameters.pt.betaQ3_others*quartile_3 + parameters.pt.betaQ4_others*quartile_4);
+	}
+	//BYIN 2025-01: in new dmc, use betaInVehicleTime_u_min for all pt time consumed
 	protected double estimateAccessEgressTimeUtility(PtVariables variables) {
-		return parameters.pt.betaAccessEgressTime_u_min * variables.accessEgressTime_min;
+		return variables.trip_commuting * (parameters.pt.betaInVehicleTime_u_min_commuting * variables.accessEgressTime_min) +
+				variables.trip_others * (parameters.pt.betaInVehicleTime_u_min_others * variables.accessEgressTime_min);
 	}
 
 	protected double estimateInVehicleTimeUtility(PtVariables variables) {
-		return parameters.pt.betaInVehicleTime_u_min * variables.inVehicleTime_min;
+		return variables.trip_commuting * (parameters.pt.betaInVehicleTime_u_min_commuting * variables.inVehicleTime_min) +
+				variables.trip_others * (parameters.pt.betaInVehicleTime_u_min_others * variables.inVehicleTime_min);
 	}
-
+	//BYIN 2025-01: in new dmc, use betaInVehicleTime_u_min for all pt time consumed
 	protected double estimateWaitingTimeUtility(PtVariables variables) {
-		return parameters.pt.betaWaitingTime_u_min * variables.waitingTime_min;
+		return variables.trip_commuting * parameters.pt.betaInVehicleTime_u_min_commuting * variables.waitingTime_min +
+				variables.trip_others * parameters.pt.betaInVehicleTime_u_min_others * variables.waitingTime_min;
 	}
 
 	protected double estimateLineSwitchUtility(PtVariables variables) {
-		return parameters.pt.betaLineSwitch_u * variables.numberOfLineSwitches;
+		return variables.trip_commuting * parameters.pt.betaLineSwitch_u_commuting * variables.numberOfLineSwitches +
+				variables.trip_others * parameters.pt.betaLineSwitch_u_others * variables.numberOfLineSwitches;
 	}
 
-	protected double estimateMonetaryCostUtility(PtVariables variables) {
+/*	protected double estimateMonetaryCostUtility(PtVariables variables) {
 		return parameters.betaCost_u_MU * EstimatorUtils.interaction(variables.euclideanDistance_km,
 				parameters.referenceEuclideanDistance_km, parameters.lambdaCostEuclideanDistance) * variables.cost_MU;
-	}
-
-	// BYIN feb 24
-	public List<String> getPtTravelTimes() {
-		return ptTravelTimes;
-	}
-	public void setRecordActive() {
-		this.RecordActive = true;
-	}
-
-
-	protected void saveTripTravelTime (PtVariables variables, Person person, DiscreteModeChoiceTrip trip) {
-
-		String personID = person.getId().toString();
-
-		int totalSecs = (int) trip.getDepartureTime();
-		int hours = (totalSecs / 3600);
-		int minutes = (totalSecs % 3600) / 60;
-		int seconds = totalSecs % 60;
-		String tripDepTime = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-
-		double travelTime_min = 0.0;
-		travelTime_min = variables.inVehicleTime_min + variables.accessEgressTime_min + variables.waitingTime_min;
-		travelTime_min = Precision.round(travelTime_min, 1);
-		double euclideanDistance = 0.0;
-		euclideanDistance = variables.euclideanDistance_km;
-
-		if (RecordActive) {
-			ptTravelTimes.add(personID + ";" + tripDepTime + ";" + travelTime_min + ";" + euclideanDistance);
-		}
+	}*/
+	//BYIN 2025-01: pt cost is constant of 0.8 euros
+	protected double estimateMonetaryCostUtility(PtVariables variables) {
+		return variables.trip_commuting * parameters.betaCost_u_MU_commuting * variables.cost_MU +
+				variables.trip_others * parameters.betaCost_u_MU_others * variables.cost_MU;
 	}
 
 
@@ -95,19 +98,15 @@ public class PtUtilityEstimator implements UtilityEstimator {
 		PtVariables variables = predictor.predictVariables(person, trip, elements);
 		PersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);
 
-		// BYIN feb 24
-		saveTripTravelTime (variables, person, trip);
-
+		double coefficient_income = Math.pow(personVariables.income/parameters.mean_equ_income, parameters.income_power);
 		double utility = 0.0;
-		double coefficient_time_income = Math.exp(parameters.lambda_time * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
-		double coefficient_cost_income = Math.exp(parameters.lambda_cost * (personVariables.income - parameters.referenceHouseholdIncome)/parameters.referenceHouseholdIncome);
-
-		utility += estimateConstantUtility();
-		utility += estimateAccessEgressTimeUtility(variables) * coefficient_time_income;
-		utility += estimateInVehicleTimeUtility(variables) * coefficient_time_income;
-		utility += estimateWaitingTimeUtility(variables) * coefficient_time_income;
+		utility += estimateConstantUtility(variables);
+		utility += estimateAffordabilityUtility(personVariables, variables);
+		utility += estimateAccessEgressTimeUtility(variables);
+		utility += estimateInVehicleTimeUtility(variables);
+		utility += estimateWaitingTimeUtility(variables);
 		utility += estimateLineSwitchUtility(variables);
-		utility += estimateMonetaryCostUtility(variables) * coefficient_cost_income;
+		utility += estimateMonetaryCostUtility(variables) * coefficient_income;
 
 		return utility;
 	}

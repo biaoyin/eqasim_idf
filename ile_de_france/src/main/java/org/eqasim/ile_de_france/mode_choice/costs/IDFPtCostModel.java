@@ -64,6 +64,7 @@ public class IDFPtCostModel implements CostModel {
 
 	@Override
 	public double calculateCost_MU(Person person, DiscreteModeChoiceTrip trip, List<? extends PlanElement> elements) {
+
 		// I) If the person has a subscription, the price is zero!
 
 		IDFPersonVariables personVariables = personPredictor.predictVariables(person, trip, elements);

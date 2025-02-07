@@ -44,8 +44,7 @@ public class IDFBikeUtilityEstimator extends BikeUtilityEstimator {
 		double utility = 0.0;
 
 		utility += super.estimateUtility(person, trip, elements);
-		utility += estimateUrbanUtility(variables);
-
+		//utility += estimateUrbanUtility(variables); // BYIN 2025-01: not considered in the new dmc model
 		return utility;
 	}
 }
