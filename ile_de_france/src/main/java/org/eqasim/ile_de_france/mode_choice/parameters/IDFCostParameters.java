@@ -10,7 +10,7 @@ public class IDFCostParameters implements ParameterDefinition {
 		IDFCostParameters parameters = new IDFCostParameters();
         //BYIN 2025-01:  1.25 times to the current car cost ; set public transport cost to 0.8 euros in PtPredictor
 		//parameters.carCost_EUR_km = 0.15;
-		parameters.carCost_EUR_km = 0.15 * 1.25;
+		parameters.carCost_EUR_km = 0.20 * 1.25;
 		parameters.parisParkingCost_EUR_h = 3.0;
 		return parameters;
 	}
