@@ -36,14 +36,18 @@ import java.util.*;
 //BYIN2025-01: Run Rayane's new dmc (version 2, see dmc_variables_and_equations.pdf. Attention: new scenario inputs need to use,
 // due to the equivalized unit income generated in the new synthetic population.
 public class RunSimulationCarPt_RoadPricing {
-	static String outputPath = "E:\\lvmt_BY\\simulation_output\\eqasim_idf\\ile-de-france-5pct\\New_DMC_2\\base_case";
+	static String outputPath =
+			"F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\simout_IdF_egt5pct_egt2020_DCM_ref";
+			// "E:\\lvmt_BY\\simulation_output\\eqasim_idf\\ile-de-france-5pct\\New_DMC_2\\base_case";
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/base_case/ile_de_france_config.xml"};
+		args = new String[] {
+				"--config-path", "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020\\ile_de_france_config.xml"};
+				// "--config-path", "ile_de_france/scenarios/ile-de-france-5pct/base_case/ile_de_france_config.xml"};
         // set car-pt parameters
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train_outside_paris.csv";
+		String locationFile = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\data_IdF_RP\\parcs-relais-idf_rer_train_outside_paris.csv";
 		// set road pricing parameters
-		String areaShapeFile = "C:/Users/LiuLiu/Documents/MATSIM/Project/eqasim_idf/gis/paris_inner.shp";
+		String areaShapeFile = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\data_IdF_RP\\gis\\paris_inner.shp";
 		double fee_toll = 0; //euros
 
 		TestCarPtPara tp = new TestCarPtPara();
@@ -60,7 +64,7 @@ public class RunSimulationCarPt_RoadPricing {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(60);
+		config.controler().setLastIteration(80); //80
 		config.controler().setOutputDirectory(outputPath + fee_toll);
 		//config.plans().setInputFile("ile_de_france_population_test_100p.xml.gz");
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
@@ -82,7 +86,7 @@ public class RunSimulationCarPt_RoadPricing {
 		eqasimConfig.setEstimator("pt_car", "IDFPtCarUtilityEstimator");
 
 		eqasimConfig.removeEstimator("car_passenger");
-		eqasimConfig.setEstimator("car_passenger", "CarPassengerUtilityEstimator");
+		eqasimConfig.setEstimator("car_passenger", "IDFCarPassengerUtilityEstimatorRoadPricing");
 		eqasimConfig.removeEstimator("pt");
 		eqasimConfig.setEstimator("pt", "IDFPtUtilityEstimator"); //BYIN 2025-01: we use the IDF pt definition rather than the default pt in the config file.
 

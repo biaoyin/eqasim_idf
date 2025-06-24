@@ -10,8 +10,10 @@ import org.eqasim.core.simulation.analysis.EqasimAnalysisModule;
 import org.eqasim.core.simulation.mode_choice.EqasimModeChoiceModuleCarPt;
 import org.eqasim.core.tools.TestCarPtPara;
 import org.eqasim.ile_de_france.IDFConfigurator;
+//iciiiiiiiiiiiiiiiiiiiiiiiiiiiiii (une ligne en // et remplacer idfmodechoicemodule par idfmodechoicemodulecarptltn
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModule;
 import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPt;
+import org.eqasim.ile_de_france.mode_choice.IDFModeChoiceModuleCarPtLTN;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -51,15 +53,20 @@ import java.io.IOException;
 import java.util.*;
 
 public class RunSimulationCarPt_DrivingRestriction {
-	static String outputPath = "E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-5pct/New_DMC/Rayane_travel_time_com/PTCar_drz_paris";
+	static String outputPath = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\simout_IdF_egt5pct_egt2020_DCM_LTN";
+			//"E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-5pct/New_DMC/Rayane_travel_time_com/PTCar_drz_paris";
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
-		args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/driving_restriction/ile_de_france_config_carInternal.xml"};
-		String locationFile = "ile_de_france/scenarios/parcs-relais-idf_rer_train_outside_paris.csv";
+		args = new String[] {
+				"--config-path", "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_config_carInternal.xml"};
+		// "--config-path", "ile_de_france/scenarios/ile-de-france-5pct/base_case/ile_de_france_config.xml"};
 
-		double car_pt_constant = 0.75;
+		//args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/driving_restriction/ile_de_france_config_carInternal.xml"};
+		String locationFile = "ile_de_france\\scenarios\\parcs-relais-idf_rer_train_outside_paris.csv";
+
+		//double car_pt_constant = 0.75;
 		TestCarPtPara tp = new TestCarPtPara();
-		tp.setPara(car_pt_constant);
+		//tp.setPara(car_pt_constant);
 		tp.setCarPtSavePath(outputPath);
 
 		CommandLine cmd = new CommandLine.Builder(args) //
@@ -70,7 +77,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		Config config = ConfigUtils.loadConfig(cmd.getOptionStrict("config-path"), configurator.getConfigGroups());
 
 		//modify some parameters in config file
-		config.controler().setLastIteration(60);
+		config.controler().setLastIteration(80);
         //config.controler().setFirstIteration(60);
 		//config.controler().setLastIteration(61);
 
@@ -86,8 +93,8 @@ public class RunSimulationCarPt_DrivingRestriction {
 		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");
 		//config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly_allmodes_available.xml");  //comparison of travel time for all travel models BYIN 04/2024
 		//config.plans().setInputFile("E:\\lvmt_BY\\simulation_output\\eqasim_idf\\ile-de-france-5pct\\New_DMC\\Rayane_travel_time_com\\PTCar_drz_paris_it.60\\60.plans.allmodes_available.xml");
-		config.vehicles().setVehiclesFile("vehicle_types.xml");
-		config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
+		//config.vehicles().setVehiclesFile("vehicle_types.xml");
+		//config.qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData);  //original value is defaultVehicle
 		//BYIN: qsim visulasation (can be shown in via) : can also put this setting in RunAdaptConfig_CarInternal.java
 		config.qsim().setMainModes(Arrays.asList("car","carInternal"));//attention: car_passenger is excluded, corresponding adds in emissionRunner
 
@@ -104,6 +111,9 @@ public class RunSimulationCarPt_DrivingRestriction {
 				ss.setWeight(0.05);
 			}
 		}
+
+
+
 		//add parameters of the new mode and related: discrete mode choice in eqasim
 		// Scoring config
 		PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
@@ -113,12 +123,23 @@ public class RunSimulationCarPt_DrivingRestriction {
 
 		// consider carInternal as a special car, using the same parameters of car and the same others
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
-		eqasimConfig.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
-		eqasimConfig.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
+		//ici j'essaie les 2 lignes remplaçant les modules:
+
+
+		eqasimConfig.setCostModel("carInternal", IDFModeChoiceModuleCarPtLTN.CAR_COST_MODEL_NAME);
+		eqasimConfig.setEstimator("carInternal", IDFModeChoiceModuleCarPtLTN.CAR_ESTIMATOR_NAME);
+
+		//eqasimConfig.setCostModel("carInternal", IDFModeChoiceModule.CAR_COST_MODEL_NAME);
+		//eqasimConfig.setEstimator("carInternal", IDFModeChoiceModule.CAR_ESTIMATOR_NAME);
 
 		// Eqasim config definition to add the mode car_pt estimation
-		eqasimConfig.setEstimator("car_pt", "CarPtUtilityEstimator");
-		eqasimConfig.setEstimator("pt_car", "PtCarUtilityEstimator");
+		eqasimConfig.setEstimator("car_pt", "IDFCarPtUtilityEstimator");//BYIN 2025-01: we use the IDF car_pt (pt_car) definition in the new dmc
+		eqasimConfig.setEstimator("pt_car", "IDFPtCarUtilityEstimator");
+
+		eqasimConfig.removeEstimator("car_passenger");
+		eqasimConfig.setEstimator("car_passenger", "CarPassengerUtilityEstimator");
+		eqasimConfig.removeEstimator("pt");
+		eqasimConfig.setEstimator("pt", "IDFPtUtilityEstimator"); //BYIN 2025-01: we use the IDF pt definition rather than the default pt in the config file.
 
 		// Scoring config definition to add the mode car_pt parameters
 		//PlanCalcScoreConfigGroup scoringConfig = config.planCalcScore();
@@ -151,6 +172,13 @@ public class RunSimulationCarPt_DrivingRestriction {
 		cachedModes.add("carInternal");
 		dmcConfig.setCachedModes(cachedModes);
 
+		// BYIN 2025-01: we add passenger utility now. So here delete the PassengerConstraint
+		Collection<String> tripConstraints = new HashSet<>(dmcConfig.getTripConstraints());
+		if (tripConstraints.contains("PassengerConstraint")){
+			tripConstraints.remove("PassengerConstraint");
+		}
+		dmcConfig.setTripConstraints(tripConstraints);
+
 		// Activation of constraint intermodal modes Using
 		Collection<String> tourConstraints = new HashSet<>(dmcConfig.getTourConstraints());
 		tourConstraints.add("IntermodalModesConstraint");
@@ -175,7 +203,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 
 		controller.addOverridingModule(new EqasimAnalysisModule());
 		controller.addOverridingModule(new EqasimModeChoiceModuleCarPt());
-		controller.addOverridingModule(new IDFModeChoiceModuleCarPt(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));
+		controller.addOverridingModule(new IDFModeChoiceModuleCarPtLTN(cmd, parkRideCoords, scenario.getNetwork(), scenario.getPopulation().getFactory()));
 		controller.addOverridingModule(new EqasimCarPtModule(parkRideCoords));
 		controller.addOverridingModule(new EqasimPtCarModule(parkRideCoords));
 
