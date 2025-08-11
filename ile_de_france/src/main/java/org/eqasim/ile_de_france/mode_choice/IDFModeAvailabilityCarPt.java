@@ -64,6 +64,10 @@ public class IDFModeAvailabilityCarPt implements ModeAvailability {
 
 		// BYIN 2025-01: car_passenger is always available
 		modes.add("car_passenger");
+		// BYIN 2025-06
+ 		if ("personInternal".equals((String) person.getAttributes().getAttribute("subpopulation"))) {
+			modes.add("carPassengerInternal");
+		}
 
 		// Add special mode "car_passenger" if applicable
 //		Boolean isCarPassenger = (Boolean) person.getAttributes().getAttribute("isPassenger");

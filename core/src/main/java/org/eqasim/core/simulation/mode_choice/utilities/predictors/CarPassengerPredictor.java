@@ -54,6 +54,7 @@ public class CarPassengerPredictor extends CachedVariablePredictor<CarPassengerV
 								accessEgressTime_min += leg.getTravelTime().seconds() / 60.0;
 							}
 							break;
+						case "carPassengerInternal": //BYIN 2025-06
 						case "car_passenger":
 							travelTime_min += leg.getTravelTime().seconds() / 60.0;
 

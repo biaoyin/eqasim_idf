@@ -37,7 +37,7 @@ import java.util.*;
 // due to the equivalized unit income generated in the new synthetic population.
 public class RunSimulationCarPt_RoadPricing {
 	static String outputPath =
-			"F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\simout_IdF_egt5pct_egt2020_DCM_ref";
+			"F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\simout_IdF_egt5pct_egt2020_DCM_TOLL";
 			// "E:\\lvmt_BY\\simulation_output\\eqasim_idf\\ile-de-france-5pct\\New_DMC_2\\base_case";
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
@@ -48,7 +48,7 @@ public class RunSimulationCarPt_RoadPricing {
 		String locationFile = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\data_IdF_RP\\parcs-relais-idf_rer_train_outside_paris.csv";
 		// set road pricing parameters
 		String areaShapeFile = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\data_IdF_RP\\gis\\paris_inner.shp";
-		double fee_toll = 0; //euros
+		double fee_toll = 5; //euros
 
 		TestCarPtPara tp = new TestCarPtPara();
 		tp.setCarPtSavePath(outputPath + fee_toll);

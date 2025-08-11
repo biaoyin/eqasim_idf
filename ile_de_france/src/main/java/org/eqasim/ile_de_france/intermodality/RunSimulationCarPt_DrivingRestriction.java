@@ -52,13 +52,15 @@ import org.matsim.vehicles.VehiclesFactory;
 import java.io.IOException;
 import java.util.*;
 
+//BYIN: add carPassengerInternal into LTN scenario 06/25.
 public class RunSimulationCarPt_DrivingRestriction {
-	static String outputPath = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\simout_IdF_egt5pct_egt2020_DCM_LTN";
+	static String outputPath = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\simout_IdF_egt5pct_egt2020_DCM_LTN_CPInternal";
 			//"E:/lvmt_BY/simulation_output/eqasim_idf/ile-de-france-5pct/New_DMC/Rayane_travel_time_com/PTCar_drz_paris";
 
 	static public void main(String[] args) throws ConfigurationException, IOException {
 		args = new String[] {
-				"--config-path", "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_config_carInternal.xml"};
+				"--config-path", "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_config_carInternal_carPassengerInternal.xml"};
+		// "--config-path", "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_config_carInternal.xml"};
 		// "--config-path", "ile_de_france/scenarios/ile-de-france-5pct/base_case/ile_de_france_config.xml"};
 
 		//args = new String[] {"--config-path", "ile_de_france/scenarios/ile-de-france-5pct/driving_restriction/ile_de_france_config_carInternal.xml"};
@@ -89,8 +91,8 @@ public class RunSimulationCarPt_DrivingRestriction {
 		config.qsim().setUsingTravelTimeCheckInTeleportation( true );
 
 		//1) driving restriction setting
-		config.network().setInputFile("ile_de_france_network_carInternal.xml.gz");
-		config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly.xml.gz");
+		config.network().setInputFile("ile_de_france_network_carInternal_carPassengerInternal.xml.gz");
+		config.plans().setInputFile("ile_de_france_population_carInternal_carPassengerInternal_residentOnly.xml.gz");
 		//config.plans().setInputFile("ile_de_france_population_carInternal_residentOnly_allmodes_available.xml");  //comparison of travel time for all travel models BYIN 04/2024
 		//config.plans().setInputFile("E:\\lvmt_BY\\simulation_output\\eqasim_idf\\ile-de-france-5pct\\New_DMC\\Rayane_travel_time_com\\PTCar_drz_paris_it.60\\60.plans.allmodes_available.xml");
 		//config.vehicles().setVehiclesFile("vehicle_types.xml");
@@ -101,6 +103,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		// add carInternal to traveltimeCalculator
 		Set<String> analyzedModes = new HashSet<> (config.travelTimeCalculator().getAnalyzedModes());
 		analyzedModes.add("carInternal");
+		analyzedModes.add("carPassengerInternal");
 		config.travelTimeCalculator().setAnalyzedModes(analyzedModes);
 
 		for (StrategyConfigGroup.StrategySettings ss : config.strategy().getStrategySettings()) {
@@ -120,6 +123,10 @@ public class RunSimulationCarPt_DrivingRestriction {
 		ModeParams carInternalParams = new ModeParams("carInternal");
 		carInternalParams.setMarginalUtilityOfTraveling(-1.0);
 		scoringConfig.addModeParams(carInternalParams);
+		ModeParams carPassengerInternalParams = new ModeParams("carPassengerInternal");
+		carPassengerInternalParams.setMarginalUtilityOfTraveling(-1.0);
+		scoringConfig.addModeParams(carPassengerInternalParams);
+
 
 		// consider carInternal as a special car, using the same parameters of car and the same others
 		EqasimConfigGroup eqasimConfig = EqasimConfigGroup.get(config);
@@ -138,6 +145,8 @@ public class RunSimulationCarPt_DrivingRestriction {
 
 		eqasimConfig.removeEstimator("car_passenger");
 		eqasimConfig.setEstimator("car_passenger", "CarPassengerUtilityEstimator");
+		eqasimConfig.setEstimator("carPassengerInternal", "CarPassengerUtilityEstimator");//BYIN 2025-06: same as car_passenger utility
+
 		eqasimConfig.removeEstimator("pt");
 		eqasimConfig.setEstimator("pt", "IDFPtUtilityEstimator"); //BYIN 2025-01: we use the IDF pt definition rather than the default pt in the config file.
 
@@ -170,6 +179,7 @@ public class RunSimulationCarPt_DrivingRestriction {
 		cachedModes.add("car_pt");
 		cachedModes.add("pt_car");
 		cachedModes.add("carInternal");
+		cachedModes.add("carPassengerInternal"); //BYIN 2025-06
 		dmcConfig.setCachedModes(cachedModes);
 
 		// BYIN 2025-01: we add passenger utility now. So here delete the PassengerConstraint
@@ -217,6 +227,10 @@ public class RunSimulationCarPt_DrivingRestriction {
 		VehiclesFactory vehiclesFactory = scenario.getVehicles().getFactory();
 		VehicleType carInternalVehicleType = vehiclesFactory.createVehicleType(Id.create("carInternal", VehicleType.class));
 		scenario.getVehicles().addVehicleType(carInternalVehicleType);
+
+		VehicleType carPassengerInternalVehicleType = vehiclesFactory.createVehicleType(Id.create("carPassengerInternal", VehicleType.class));
+		scenario.getVehicles().addVehicleType(carPassengerInternalVehicleType);
+
 
 		configurator.configureScenario(scenario);
 		ScenarioUtils.loadScenario(scenario);

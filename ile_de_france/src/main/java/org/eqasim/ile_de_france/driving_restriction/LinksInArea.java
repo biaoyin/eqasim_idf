@@ -26,10 +26,10 @@ public class LinksInArea {
 
     public static void main (String[] args) throws IOException {
         // Input and output files
-        String networkInputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\ile_de_france_1pm\\matsim_input\\ile_de_france_network.xml.gz";
-        String linkIDOutputFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\scenarios\\mobility_model\\link_specification_Paris\\Paris_linkIDs.txt";
+        String networkInputFile = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_network.xml.gz";
+        String linkIDOutputFile = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\Paris_linkIDs.txt";
 
-        String areaShapeFile = "C:\\Users\\biao.yin\\Documents\\MATSIM\\Project\\qgis\\Paris\\paris.shp";
+        String areaShapeFile = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\data_IdF_RP\\gis\\paris_inner.shp";
 
         // Get network
         Scenario scenario = ScenarioUtils.createScenario(ConfigUtils.createConfig());
@@ -40,9 +40,9 @@ public class LinksInArea {
         Collection<SimpleFeature> features = (new ShapeFileReader()).readFileAndInitialize(areaShapeFile);
         Map<String, Geometry> zoneGeometries = new HashMap<>();
         for (SimpleFeature feature : features) {
-            zoneGeometries.put((String) feature.getAttribute("scenario"), (Geometry) feature.getDefaultGeometry());
+            zoneGeometries.put((String) feature.getAttribute("Class"), (Geometry) feature.getDefaultGeometry());
         }
-        Geometry areaGeometry = zoneGeometries.get("paris");
+        Geometry areaGeometry = zoneGeometries.get("paris_inner");
         // Collect all links that within the area
         Set<Id<Link>> retainedLinkIds = new HashSet<>();
 

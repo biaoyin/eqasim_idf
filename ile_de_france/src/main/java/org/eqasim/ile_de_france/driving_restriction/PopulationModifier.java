@@ -16,7 +16,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 
 import java.io.*;
 import java.util.*;
-
+// BYIN: add carPassengerInternal for LTN scenario 06/25
 public class PopulationModifier {
 
     private static final Logger LOG = LogManager.getLogger(PopulationModifier.class);
@@ -25,7 +25,7 @@ public class PopulationModifier {
     // Input and output files
 
         String plansInputFile =  "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_population.xml.gz";
-        String plansOutputFile =  "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_population_carInternal_residentOnly.xml.gz";
+        String plansOutputFile =  "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\ile_de_france_population_carInternal_carPassengerInternal_residentOnly.xml.gz";
         String outputFile_ResidentsReader = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\personInternalIDsList.txt";
 
         //String RedStreets = "F:\\Rayane-MATSIM-Synth-pop_2020-DCM-2020\\synpop_IdF_egt5pct_egt2020_LTN\\RedLinksID.txt";
@@ -126,6 +126,13 @@ public class PopulationModifier {
                             leg.setRoutingMode("carInternal");
                             //leg.getAttributes().putAttribute("routingMode", "carInternal");
                         }
+
+                        if (leg.getMode().equals("car_passenger")) {
+                            leg.setMode("carPassengerInternal");
+                            leg.setRoutingMode("carPassengerInternal");
+                        }
+
+
                         String routingMode = leg.getRoutingMode();
                         if (leg.getMode().equals(TransportMode.walk) && (routingMode.equals(TransportMode.car)))
                         {
@@ -133,10 +140,17 @@ public class PopulationModifier {
                             //leg.getAttributes().putAttribute("routingMode", "carInternal");
                              // as well as for "car_passenger"
                         }
+                        if (leg.getMode().equals(TransportMode.walk) && (routingMode.equals("car_passenger")))
+                        {
+                            leg.setRoutingMode("carPassengerInternal");
+                        }
                     } else if (pe instanceof Activity) {
                         Activity activity = (Activity) pe;
                         if (activity.getType().equals("car interaction")) {
                             activity.setType("carInternal interaction");
+                        }
+                        if (activity.getType().equals("car_passenger interaction")) {
+                            activity.setType("carPassengerInternal interaction");
                         }
                     }
                 }
